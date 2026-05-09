@@ -1,0 +1,118 @@
+name: build
+description: |
+  Local: create feature branch + PR. Server: implement plan, run /pr-review,
+  triage the findings. The user reads the PR review + triage comments and
+  decides what to do (no automated fix step).
+
+runner: server
+runner_args: ["--github"]
+
+steps:
+  - id: setup
+    interactive: false
+    output: .claude/memories/{{ timestamp }}-pr-url.txt
+    command: |
+      {{ pipeline_dir }}/scripts/build_setup.py \
+        --plan "{{ input }}" \
+        --out-pr-url "{{ output }}"
+
+  - id: build
+    interactive: false
+    prompt: |
+      You are running on a feature branch that already has an open PR. Do NOT
+      create a new branch and do NOT open a new PR.
+
+      The PR URL is recorded in `{{ steps.setup.output }}` (a single line).
+      Read it once at the start so you can reference it in commit bodies if
+      useful.
+
+      Run `/build {{ input }}` to implement the plan.
+
+      After each phase, commit and push to `origin` so progress is visible on
+      the PR. Do not push to `upstream`. Do not change the PR title.
+
+      When validation passes, the plan's frontmatter `status` should be
+      `built` and the final commit pushed. The next step will run /pr-review.
+
+  - id: review
+    interactive: false
+    prompt: |
+      Read the PR URL from `{{ steps.setup.output }}` (a single line).
+      Then run `/pr-review <that URL>` against that PR.
+
+      The review must be posted as a PR comment by the slash command (it
+      already does this). Do not skip the posting step — the next pipeline
+      stage triages whatever you posted.
+
+  - id: triage
+    interactive: false
+    prompt: |
+      Read the PR URL from `{{ steps.setup.output }}` (a single line) — call it `PR`.
+
+      Goal: score the unresolved findings from the /pr-review comment on
+      `PR` and **append** a triage section to that same comment (do not post
+      a new one).
+
+      ## Step 1 — find the review comment
+
+      `gh pr view <PR> --json comments` returns each comment's `id`,
+      `author.login`, and `body`. Pick the most recent comment whose body
+      starts with `# PR Review` (that's the /pr-review report). Remember
+      its `id` and `body`.
+
+      Also run `gh pr diff <PR>` so you can sanity-check that flagged code
+      still exists. Skip findings that have already been resolved.
+
+      ## Step 2 — score
+
+      For each remaining finding (Critical / High / Medium / Low sections),
+      assign:
+
+      - **severity** (1-10): 9-10 critical (security, data loss),
+        7-8 high (broken functionality), 5-6 medium (missing validation),
+        3-4 low (code quality), 1-2 cosmetic.
+      - **effort** (1-10) using Claude Code: 1-2 a couple minutes,
+        3-4 ~15 min, 5-6 ~30 min, 7-8 a few hours, 9-10 half a day+.
+      - **score** = severity * (11 - effort)  (higher = fix sooner)
+      - **action**: `fix` if score >= 40, otherwise `backlog`.
+
+      Do NOT make any code changes. This step is read-only on the repo.
+
+      ## Step 3 — append to the review comment
+
+      Build the addendum:
+
+      ```
+      ---
+
+      ## Triage
+
+      ### Fix Now
+      1. [sev:S eff:E score:N] <one-line description>
+      ...
+
+      ### Backlog
+      1. <one-line description>
+      ...
+      ```
+
+      If no remaining findings, the addendum body is:
+
+      ```
+      ---
+
+      ## Triage
+
+      No remaining issues — clean PR.
+      ```
+
+      Update the existing comment by PATCHing its body to `<original body> + "\n\n" + <addendum>`:
+
+      ```
+      gh api -X PATCH /repos/<owner>/<repo>/issues/comments/<comment-id> \
+        -f body="<combined body>"
+      ```
+
+      Use the repo owner and repo name from the injected session context at
+      the top of this conversation — do not call `gh repo view`. Do not post
+      a new comment.
