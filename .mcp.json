@@ -10,6 +10,13 @@
     "code-index": {
       "command": ".claude/mcp-index-server/start.sh",
       "args": []
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
     }
   }
 }
