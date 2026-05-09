@@ -56,5 +56,6 @@ coverage/
 examples/
 
 # Codebench related
+.claude/index
 .claude/index-cache
 .claude/memories
