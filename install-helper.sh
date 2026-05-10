@@ -135,7 +135,7 @@ update_env() {
     local vars=("GH_TOKEN" "CONTEXT7_API_KEY")
     local lines=(
         "# GH_TOKEN=          # written by: uv run .claude/helpers/setup-github-token.py"
-        "# CONTEXT7_API_KEY=  # optional, enables Context7 MCP"
+        "# CONTEXT7_API_KEY=  # optional, raises Context7 rate limits (works without)"
     )
 
     if [ "$DRY_RUN" = true ]; then
@@ -330,7 +330,7 @@ main() {
         echo "      uv run .claude/helpers/setup-github-token.py"
         echo "  - Slash commands: /research, /plan, /build, /review, /pr-review, /ship"
         echo "  - Run a pipeline: ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""
-        echo "  - Optional env: export CONTEXT7_API_KEY=... in your shell profile to enable Context7"
+        echo "  - Optional: export CONTEXT7_API_KEY=... in your shell profile to raise Context7 rate limits (works without)"
     fi
 }
 
