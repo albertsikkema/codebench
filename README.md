@@ -20,7 +20,7 @@ curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/instal
 curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/install.sh | bash -s -- --dry-run
 ```
 
-The installer drops `.claude/` (skills, commands, helpers, hooks with prebuilt binaries, rules, templates, settings, pipelines) and `.mcp.json` into the target, creates the runtime dirs, and adds `.claude/index`, `.claude/index-cache`, `.claude/logs`, `.claude/memories` to `.git/info/exclude` so they don't get committed. Existing files in `.claude/` that the installer ships are overwritten; anything you added stays.
+The installer drops `.claude/` (skills, commands, helpers, hooks with prebuilt binaries, rules, templates, settings, pipelines) and `.mcp.json` into the target, creates the runtime dirs, and adds `.claude`, `.mcp.json`, `.env`, `.playwright/`, `.playwright-mcp/` to `.gitignore` (creating it if needed) so they don't get committed. Existing files in `.claude/` that the installer ships are overwritten; anything you added stays.
 
 Re-run the curl one-liner any time to pull updates — it always fetches the latest version of the requested branch / tag.
 
