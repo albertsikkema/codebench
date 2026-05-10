@@ -91,7 +91,7 @@ install_tree() {
 
 update_gitignore() {
     local gi="$TARGET_DIR/.gitignore"
-    local entries=(".claude" ".mcp.json" ".env" ".playwright/" ".playwright-mcp/")
+    local entries=(".claude" ".mcp.json" ".env" ".playwright/" ".playwright-mcp/" "READTHISFIRST.md")
     local marker="# Added by codebench install-helper.sh"
 
     if [ "$DRY_RUN" = true ]; then
