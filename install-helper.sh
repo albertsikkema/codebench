@@ -124,7 +124,7 @@ update_gitignore() {
 
     for entry in "${to_add[@]}"; do
         echo "$entry" >> "$gi"
-        print_message "$GREEN" "  ok added: $entry"
+        print_message "$GREEN" "  ok added to .gitignore: $entry"
     done
 }
 
