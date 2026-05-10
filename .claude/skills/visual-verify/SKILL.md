@@ -46,8 +46,10 @@ Verify rendered UI output using the Playwright MCP server. This skill closes the
 Open the target URL in the browser.
 
 ```
-browser_navigate → target URL (e.g., http://localhost:3000/page)
+browser_navigate → target URL (e.g., http://host.docker.internal:3000/page)
 ```
+
+If the user gives you a `localhost` or `127.0.0.1` URL for a dev server on their host, rewrite the host part to `host.docker.internal` before navigating - inside the `claude-safe` container, `localhost` is the container itself, not the user's machine. See `.claude/rules/mcp-servers.md` (Playwright section) for the full rule.
 
 ### Step 2: Snapshot (Accessibility Tree)
 
@@ -150,7 +152,7 @@ After verification, produce a markdown report:
 ```markdown
 ## Visual Verification Report
 
-**URL**: http://localhost:3000/page
+**URL**: http://host.docker.internal:3000/page
 **Date**: YYYY-MM-DD
 
 ### Verdict: PASS / FAIL / PARTIAL
