@@ -63,26 +63,46 @@ install_file() {
     print_message "$GREEN" "  ok $desc"
 }
 
-update_git_exclude() {
-    local exclude_path="$TARGET_DIR/.git/info/exclude"
-    local entries=(".claude/index" ".claude/index-cache" ".claude/logs" ".claude/memories" ".playwright/" ".playwright-mcp/")
+# Copy every file under $1 into $TARGET_DIR (preserving relative paths under SCRIPT_DIR).
+# Prints a single summary line. Stores file count in $LAST_COUNT.
+LAST_COUNT=0
+install_tree() {
+    local src_root="$1" label="$2"
+    local count=0
+    while IFS= read -r -d '' f; do
+        local rel_path="${f#"$SCRIPT_DIR/"}"
+        if [ "$DRY_RUN" != true ]; then
+            mkdir -p "$(dirname "$TARGET_DIR/$rel_path")"
+            cp "$f" "$TARGET_DIR/$rel_path"
+        fi
+        count=$((count + 1))
+    done < <(find "$src_root" -type f \
+        -not -path '*/.venv/*' \
+        -not -path '*/index/*' \
+        -not -path '*/index-cache/*' \
+        -not -path '*/logs/*' \
+        -not -path '*/memories/*' \
+        -print0)
+    LAST_COUNT=$count
+    local prefix="ok"
+    [ "$DRY_RUN" = true ] && prefix="[DRY RUN]"
+    printf "  ${GREEN}%-10s %-26s %4d files${NC}\n" "$prefix" "$label" "$count"
+}
 
-    if [ ! -d "$TARGET_DIR/.git" ]; then
-        print_message "$YELLOW" "  not a git repo, skipping git exclude"
-        return 0
-    fi
+update_gitignore() {
+    local gi="$TARGET_DIR/.gitignore"
+    local entries=(".claude" ".mcp.json" ".env" ".playwright/" ".playwright-mcp/")
 
     if [ "$DRY_RUN" = true ]; then
-        print_message "$YELLOW" "  [DRY RUN] would update .git/info/exclude"
+        print_message "$YELLOW" "  [DRY RUN] would update .gitignore"
         return 0
     fi
 
-    mkdir -p "$TARGET_DIR/.git/info"
-    [ ! -f "$exclude_path" ] && touch "$exclude_path"
+    [ ! -f "$gi" ] && touch "$gi"
 
     for entry in "${entries[@]}"; do
-        if ! grep -qxF "$entry" "$exclude_path" 2>/dev/null; then
-            echo "$entry" >> "$exclude_path"
+        if ! grep -qxF "$entry" "$gi" 2>/dev/null; then
+            echo "$entry" >> "$gi"
             print_message "$GREEN" "  ok added: $entry"
         fi
     done
@@ -101,18 +121,36 @@ main() {
     print_message "$BLUE" "Target: $TARGET_DIR"
     [ "$DRY_RUN" = true ] && print_message "$YELLOW" "DRY RUN MODE"
 
-    # Install .claude/ recursively. Exclude runtime dirs that are gitignored anyway.
+    # Install .claude/ per top-level subdir, plus loose files at .claude/ root.
+    # Skip runtime dirs (index/, index-cache/, logs/, memories/) — created below.
     print_header "Installing .claude/"
-    while IFS= read -r -d '' f; do
-        rel_path="${f#"$SCRIPT_DIR/"}"
-        install_file "$f" "$TARGET_DIR/$rel_path" "$rel_path"
-    done < <(find "$SCRIPT_DIR/.claude" -type f \
-        -not -path '*/.venv/*' \
-        -not -path '*/index/*' \
-        -not -path '*/index-cache/*' \
-        -not -path '*/logs/*' \
-        -not -path '*/memories/*' \
-        -print0)
+    local total=0
+    local skip_dirs=" index index-cache logs memories "
+    for sub in "$SCRIPT_DIR/.claude"/*/; do
+        local name
+        name=$(basename "$sub")
+        case "$skip_dirs" in *" $name "*) continue ;; esac
+        install_tree "$sub" ".claude/$name/"
+        total=$((total + LAST_COUNT))
+    done
+    # Loose files in .claude/ root (e.g. settings.json)
+    local root_count=0
+    for f in "$SCRIPT_DIR/.claude"/*; do
+        [ -f "$f" ] || continue
+        local rel_path="${f#"$SCRIPT_DIR/"}"
+        if [ "$DRY_RUN" != true ]; then
+            mkdir -p "$(dirname "$TARGET_DIR/$rel_path")"
+            cp "$f" "$TARGET_DIR/$rel_path"
+        fi
+        root_count=$((root_count + 1))
+    done
+    if [ "$root_count" -gt 0 ]; then
+        local prefix="ok"
+        [ "$DRY_RUN" = true ] && prefix="[DRY RUN]"
+        printf "  ${GREEN}%-10s %-26s %4d files${NC}\n" "$prefix" ".claude/ (root)" "$root_count"
+        total=$((total + root_count))
+    fi
+    printf "  ${BLUE}%-10s %-26s %4d files${NC}\n" "total" "" "$total"
 
     if [ "$DRY_RUN" != true ]; then
         find "$TARGET_DIR/.claude" -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
@@ -144,9 +182,9 @@ main() {
         echo "$VERSION" > "$TARGET_DIR/.claude/VERSION"
     fi
 
-    # Local-only git exclude (avoids committing .claude/ runtime + .mcp.json by default)
+    # .gitignore — keep .claude/, .mcp.json, .env out of commits by default
     print_header "Git configuration"
-    update_git_exclude
+    update_gitignore
 
     print_header "Installation complete"
     if [ "$DRY_RUN" = true ]; then
@@ -155,6 +193,8 @@ main() {
         print_message "$GREEN" "ok configuration installed"
         echo ""
         echo "Next steps:"
+        echo "  - Set up GitHub token (so Claude can push branches and open PRs in this repo):"
+        echo "      uv run .claude/helpers/setup-github-token.py"
         echo "  - Slash commands: /research, /plan, /build, /review, /pr-review, /ship"
         echo "  - Run a pipeline: ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""
         echo "  - Optional env: export CONTEXT7_API_KEY=... in your shell profile to enable Context7"
