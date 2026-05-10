@@ -326,11 +326,12 @@ main() {
 
         echo ""
         echo "Next steps:"
-        echo "  - Set up GitHub token (so Claude can push branches and open PRs in this repo):"
-        echo "      uv run .claude/helpers/setup-github-token.py"
-        echo "  - Slash commands: /research, /plan, /build, /review, /pr-review, /ship"
-        echo "  - Run a pipeline: ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""
-        echo "  - Optional: export CONTEXT7_API_KEY=... in your shell profile to raise Context7 rate limits (works without)"
+        echo "  1. Set up GitHub token (so Claude can push branches and open PRs in this repo):"
+        echo "       uv run .claude/helpers/setup-github-token.py"
+        echo "  2. Try a slash command: /research, /plan, /build, /review, /pr-review, /ship"
+        echo "  3. Run a pipeline:"
+        echo "       ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""
+        echo "  4. Optional: export CONTEXT7_API_KEY=... in your shell profile to raise Context7 rate limits (works without)"
     fi
 }
 
