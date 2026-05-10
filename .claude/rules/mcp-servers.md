@@ -157,3 +157,16 @@ When the user gives you a `localhost` / `127.0.0.1` URL for a service running on
 If `host.docker.internal` itself fails to resolve (Linux without Docker Desktop and without `--add-host=host.docker.internal:host-gateway`), tell the user — the container has no path to the host's loopback and they need to either pass that flag, run the dev server inside the container, or expose it on a routable interface. Don't silently fall back to `localhost`.
 
 External URLs (anything not on the host's loopback) work normally, subject to the firewall allowlist when `claude-safe` is run without `--no-firewall`.
+
+### Never install browsers yourself
+
+Chromium is already installed in the container, and the playwright MCP server is configured to use it (`--browser chromium`). **Do not run `npx playwright install`, `npx playwright install chrome`, `chrome-for-testing`, or any other browser-install command.** An install from the chat session is always wrong and burns time + bandwidth.
+
+If `browser_navigate` fails, do NOT assume the browser is missing. The most common causes, in order:
+
+1. **Loopback URL** — `localhost` / `127.0.0.1` resolves to the container, not the host. Rewrite to `host.docker.internal` (see section above).
+2. **Dev server not running** — ask the user to confirm the server is up on the expected port.
+3. **Firewall block** — `claude-safe` without `--no-firewall` blocks most outbound traffic; the user needs to rerun with `--no-firewall` or add the host to the allowlist.
+4. **Page-level error** — check `browser_console_messages()` and `browser_network_requests()` for the actual failure.
+
+Report the failure to the user with the suspected cause. Do not "fix" it by installing software.
