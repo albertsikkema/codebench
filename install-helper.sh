@@ -128,6 +128,49 @@ update_gitignore() {
     done
 }
 
+update_env() {
+    local envf="$TARGET_DIR/.env"
+    local marker="# Added by codebench install-helper.sh"
+    # Parallel arrays: variable name + the commented placeholder line to append.
+    local vars=("GH_TOKEN" "CONTEXT7_API_KEY")
+    local lines=(
+        "# GH_TOKEN=          # written by: uv run .claude/helpers/setup-github-token.py"
+        "# CONTEXT7_API_KEY=  # optional, enables Context7 MCP"
+    )
+
+    if [ "$DRY_RUN" = true ]; then
+        print_message "$YELLOW" "  [DRY RUN] would update .env"
+        return 0
+    fi
+
+    [ ! -f "$envf" ] && touch "$envf"
+
+    local to_add_idx=()
+    for i in "${!vars[@]}"; do
+        local var="${vars[$i]}"
+        # Match VAR= or # VAR= (any leading whitespace, optional comment marker).
+        if ! grep -qE "^[[:space:]]*#?[[:space:]]*${var}=" "$envf" 2>/dev/null; then
+            to_add_idx+=("$i")
+        fi
+    done
+
+    if [ ${#to_add_idx[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    if ! grep -qxF "$marker" "$envf" 2>/dev/null; then
+        if [ -s "$envf" ] && [ "$(tail -c1 "$envf")" != "" ]; then
+            echo "" >> "$envf"
+        fi
+        echo "$marker" >> "$envf"
+    fi
+
+    for i in "${to_add_idx[@]}"; do
+        echo "${lines[$i]}" >> "$envf"
+        print_message "$GREEN" "  ok added to .env: ${vars[$i]}"
+    done
+}
+
 main() {
     print_header "Codebench installer v${VERSION}"
 
@@ -230,6 +273,8 @@ main() {
     # .gitignore — keep .claude/, .mcp.json, .env out of commits by default
     print_header "Git configuration"
     update_gitignore
+
+    update_env
 
     # Detect git repo state for the post-install hint.
     local git_state="ok"
