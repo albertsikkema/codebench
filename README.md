@@ -113,6 +113,38 @@ Before every `prompt:` step, the runner shells out to [`.claude/helpers/get_meta
 
 `command:` steps always run on the host. `build.yaml` uses this to create the branch + PR locally (so the PR lives in the host's clone) before any server LLM step runs; `claude-server` then rsyncs that branch state to the dev VM.
 
+## Bundled commands and skills
+
+Slash commands (`.claude/commands/`):
+
+| Command | Purpose |
+| --- | --- |
+| `/research` | Spawn parallel sub-agents to investigate a question across the codebase, then synthesize findings |
+| `/plan` | Interactive, iterative implementation planning -- skeptical, thorough, collaborative |
+| `/build` | Execute an approved plan from `.claude/memories/` phase by phase, against its success criteria |
+| `/review` | Senior-engineer code review for quality, security, performance, maintainability |
+| `/pr-review` | Multi-agent PR review: 4 core agents always, plus up to 6 specialized agents picked from the diff |
+| `/code-analysis` | Run the code-index MCP analysis tools (hotspots, coupling, unhandled errors, dead code, ...) on a scope |
+
+Skills (`.claude/skills/`):
+
+| Skill | Purpose |
+| --- | --- |
+| `/pr` | Generate a PR description, sync the branch, push, and create or update the PR via `gh` |
+| `/ship` | Commit, push, open a PR, comment, merge with squash, return to the default branch |
+| `/release` | Create a production release: changelog, version bump, PR, merge, tag (two-branch or single-branch) |
+| `setup-release` | Scaffold `scripts/changelog-release.sh`, the GitHub Actions release workflow, and Makefile targets in a fresh project |
+| `/cleanup` | Post-implementation cleanup -- rationalize docs, capture decisions and learnings, update project state |
+| `/vulnerability-check` | Scan dependencies for known vulnerabilities (OSV, GitHub Advisory, CISA KEV, NCSC) |
+| `front-end-design` | Creative direction for distinctive, production-grade frontend interfaces; avoid generic AI aesthetics |
+| `ui-component-creator` | Structural patterns for React/TypeScript UI components (use with the project's design tokens) |
+| `mobile-friendly-design` | Responsive web patterns -- phone, tablet, desktop; mobile nav, touch targets, responsive layouts |
+| `accessibility` | WCAG 2.2 patterns: semantic HTML, ARIA, keyboard nav, color contrast, motion safety, screen readers |
+| `visual-verify` | Render-and-screenshot verification of web UI through the Playwright MCP server |
+| `api-tools` | Author and maintain Bruno API collections (Git-native, offline-first Postman alternative) |
+
+`/release`, `/ship`, `/pr`, `/cleanup`, `/vulnerability-check` are user-invocable slash commands. The design / UI skills are model-invoked when relevant frontend work shows up.
+
 ## Why fresh contexts per step
 
 Long-running Claude sessions accumulate context that biases later turns. Splitting a workflow across containers gives each step a clean slate while the YAML pins down what artifact each step must hand to the next. Interactive `safe` steps still get a normal TTY for parts that need a human in the loop.
