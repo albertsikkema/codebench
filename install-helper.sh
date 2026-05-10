@@ -141,6 +141,31 @@ main() {
     print_message "$BLUE" "Target: $TARGET_DIR"
     [ "$DRY_RUN" = true ] && print_message "$YELLOW" "DRY RUN MODE"
 
+    # Upgrade hint: compare existing VERSION against the one we're about to write.
+    if [ -f "$TARGET_DIR/.claude/VERSION" ]; then
+        local prev_version
+        prev_version=$(cat "$TARGET_DIR/.claude/VERSION" 2>/dev/null | tr -d '[:space:]')
+        if [ -n "$prev_version" ] && [ "$prev_version" != "$VERSION" ]; then
+            print_message "$YELLOW" "Upgrading: $prev_version -> $VERSION"
+        elif [ "$prev_version" = "$VERSION" ]; then
+            print_message "$BLUE" "Reinstalling same version: $VERSION"
+        fi
+    fi
+
+    # Pre-existing .claude/ files that will be overwritten (excludes runtime dirs).
+    if [ -d "$TARGET_DIR/.claude" ]; then
+        local existing
+        existing=$(find "$TARGET_DIR/.claude" -type f \
+            -not -path '*/index/*' \
+            -not -path '*/index-cache/*' \
+            -not -path '*/logs/*' \
+            -not -path '*/memories/*' \
+            2>/dev/null | wc -l | tr -d ' ')
+        if [ "$existing" -gt 0 ]; then
+            print_message "$YELLOW" "Found $existing existing files in .claude/ - shipped files will be overwritten, your additions stay."
+        fi
+    fi
+
     # Install .claude/ per top-level subdir, plus loose files at .claude/ root.
     # Skip runtime dirs (index/, index-cache/, logs/, memories/) — created below.
     print_header "Installing .claude/"
@@ -228,6 +253,8 @@ main() {
     }
     check_dep "uv"           "install: curl -fsSL https://astral.sh/uv/install.sh | sh"
     check_dep "claude-safe"  "install: curl -fsSL https://raw.githubusercontent.com/albertsikkema/claude-safe/main/install.sh | bash"
+    check_dep "docker"       "required by claude-safe - install Docker Desktop or your distro's docker package"
+    check_dep "gh"           "install: see https://cli.github.com/ (needed to create PRs)"
     check_dep "claude-server" "(optional, only needed for runner: server pipelines)"
 
     print_header "Installation complete"
