@@ -11,7 +11,7 @@ You are tasked with shipping the current branch: commit, create a PR, merge it, 
 The gtk pre-tool-use hook filters git output to save tokens. For diffs you need the full content — bypass gtk using the proxy binary directly:
 
 ```bash
-GTK=".claude/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+GTK=".claude/hooks/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
 $GTK proxy git diff
 $GTK proxy git diff --cached
 $GTK proxy git diff <merge_base>..HEAD

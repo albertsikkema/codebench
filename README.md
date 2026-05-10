@@ -10,15 +10,15 @@ YAML-driven multi-step pipeline runner for [`claude-safe`](examples/claude-safe)
 ## Usage
 
 ```bash
-./pipeline.py <pipeline.yaml> <input...>
+./.claude/pipelines/pipeline.py <pipeline.yaml> <input...>
 ```
 
 Examples:
 
 ```bash
-./pipeline.py pipelines/research-plan.yaml "rate limiting strategies for our API"
-./pipeline.py pipelines/research-plan.yaml --model sonnet "topic"
-CLAUDE_MODEL=sonnet ./pipeline.py pipelines/research-plan.yaml "topic"
+./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml "rate limiting strategies for our API"
+./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml --model sonnet "topic"
+CLAUDE_MODEL=sonnet ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml "topic"
 ```
 
 The runner prints a colored, summarized stream of each step's tool calls and assistant text to stderr. Interactive steps inherit the TTY directly.
@@ -58,7 +58,7 @@ Required keys: `name`, `steps`. Each step requires `id`, `interactive` (boolean)
 | `{{ output }}` | Rendered `output` of the current step (only inside its `prompt`) |
 | `{{ steps.<id>.output }}` | Rendered `output` of an earlier step |
 
-`pipeline.py` does not create or verify the file at `output` — it's a path your prompt is expected to write to.
+`.claude/pipelines/pipeline.py` does not create or verify the file at `output` — it's a path your prompt is expected to write to.
 
 ## Why fresh contexts per step
 
@@ -67,8 +67,7 @@ Long-running Claude sessions accumulate context that biases later turns. Splitti
 ## Layout
 
 ```
-pipeline.py              # the runner
-pipelines/               # YAML pipeline definitions
+.claude/pipelines/       # the runner (pipeline.py), YAML definitions, helper scripts
 .claude/commands/        # slash commands invoked inside steps (e.g. /research, /plan)
 .claude/templates/       # output templates referenced by those commands
 examples/                # reference repos this builds on (claude-safe, claude-setup, sandcastle)
