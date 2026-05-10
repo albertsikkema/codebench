@@ -1,13 +1,17 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "enabledMcpjsonServers": [
     "context7",
-    "code-index",
-    "playwright"
+    "playwright",
+    "code-index"
   ],
   "permissions": {
     "allow": [
       "WebFetch(domain:*)",
       "Task",
+
 
       "Bash(ls *)",
       "Bash(tree *)",
@@ -59,7 +63,6 @@
       "Bash(python -m pytest *)",
 
       "Bash(uv sync *)",
-      "Bash(uv run *)",
       "Bash(pip install *)",
 
       "Bash(docker ps *)",
@@ -67,6 +70,8 @@
       "Bash(docker logs *)",
       "Bash(docker compose up *)",
       "Bash(docker compose down *)",
+
+      "Bash(*/.claude/gtk/gtk-* *)",
 
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_snapshot",
@@ -79,7 +84,8 @@
       "mcp__playwright__browser_console_messages",
       "mcp__playwright__browser_network_requests",
       "mcp__playwright__browser_evaluate",
-      "mcp__playwright__browser_wait_for"
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_run_playwright"
     ],
     "deny": [
       "Read(./.env)",
@@ -144,6 +150,73 @@
       "Bash(curl --data-binary @* *)",
       "Bash(scp * *:*)",
       "Bash(rsync * *:*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/user_prompt_submit.py --validate",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'MAIN=$(git worktree list --porcelain 2>/dev/null | head -1 | sed \"s/worktree //\"); if [ -n \"$MAIN\" ] && [ \"$MAIN\" != \"$PWD\" ]; then [ -f \"$MAIN/.env\" ] && [ ! -f .env ] && cp \"$MAIN/.env\" .env; [ -f \"$MAIN/.mcp.json\" ] && [ ! -f .mcp.json ] && cp \"$MAIN/.mcp.json\" .mcp.json; [ -d \"$MAIN/.claude\" ] && cp -rn \"$MAIN/.claude/\" .claude/; fi'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|Glob|Grep|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/binaries/pre-tool-use-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/binaries/post-tool-use-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/binaries/post-tool-use-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')",
+            "timeout": 5000
+          }
+        ]
+      }
     ]
   }
 }
