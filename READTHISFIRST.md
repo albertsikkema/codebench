@@ -6,7 +6,7 @@ You just installed [codebench](https://github.com/albertsikkema/codebench) into 
 
 - `.claude/` — slash commands, skills, helpers, hooks, rules, templates, pipelines, settings, and prebuilt Go binaries (`hooks/binaries/`, `hooks/gtk/`, `mcp-index-server/`)
 - `.mcp.json` — MCP server config: `code-index`, `context7`, `playwright`
-- `.env` — seeded with commented placeholders for `GH_TOKEN` and `CONTEXT7_API_KEY` (gitignored)
+- `.env` — seeded with a commented `GH_TOKEN` placeholder (gitignored). `setup-github-token.py` writes the token here.
 - `.gitignore` — appended `.claude`, `.mcp.json`, `.env`, `.playwright/`, `.playwright-mcp/` so none of this gets committed
 - `.claude/index/`, `.claude/index-cache/`, `.claude/logs/`, `.claude/memories/` — runtime dirs, populated as you go
 
@@ -22,7 +22,7 @@ The installer overwrites files it ships and leaves any additions of yours alone.
    ```
    uv run .claude/helpers/setup-branch-protection.py
    ```
-3. **(Optional)** add `CONTEXT7_API_KEY` to your shell profile to raise Context7 rate limits — Context7 works without it, the key just lifts the throttle.
+3. **(Optional)** export `CONTEXT7_API_KEY` in your shell profile to raise Context7 rate limits. Context7 works without it; the key just lifts the throttle.
 
 ## Slash commands
 

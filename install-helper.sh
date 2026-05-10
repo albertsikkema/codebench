@@ -131,12 +131,8 @@ update_gitignore() {
 update_env() {
     local envf="$TARGET_DIR/.env"
     local marker="# Added by codebench install-helper.sh"
-    # Parallel arrays: variable name + the commented placeholder line to append.
-    local vars=("GH_TOKEN" "CONTEXT7_API_KEY")
-    local lines=(
-        "# GH_TOKEN=          # written by: uv run .claude/helpers/setup-github-token.py"
-        "# CONTEXT7_API_KEY=  # optional, raises Context7 rate limits (works without)"
-    )
+    local var="GH_TOKEN"
+    local line="# GH_TOKEN=          # written by: uv run .claude/helpers/setup-github-token.py"
 
     if [ "$DRY_RUN" = true ]; then
         print_message "$YELLOW" "  [DRY RUN] would update .env"
@@ -145,16 +141,8 @@ update_env() {
 
     [ ! -f "$envf" ] && touch "$envf"
 
-    local to_add_idx=()
-    for i in "${!vars[@]}"; do
-        local var="${vars[$i]}"
-        # Match VAR= or # VAR= (any leading whitespace, optional comment marker).
-        if ! grep -qE "^[[:space:]]*#?[[:space:]]*${var}=" "$envf" 2>/dev/null; then
-            to_add_idx+=("$i")
-        fi
-    done
-
-    if [ ${#to_add_idx[@]} -eq 0 ]; then
+    # Match VAR= or # VAR= (any leading whitespace, optional comment marker).
+    if grep -qE "^[[:space:]]*#?[[:space:]]*${var}=" "$envf" 2>/dev/null; then
         return 0
     fi
 
@@ -165,10 +153,8 @@ update_env() {
         echo "$marker" >> "$envf"
     fi
 
-    for i in "${to_add_idx[@]}"; do
-        echo "${lines[$i]}" >> "$envf"
-        print_message "$GREEN" "  ok added to .env: ${vars[$i]}"
-    done
+    echo "$line" >> "$envf"
+    print_message "$GREEN" "  ok added to .env: ${var}"
 }
 
 main() {
