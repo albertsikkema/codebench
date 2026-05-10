@@ -257,6 +257,32 @@ def run_shell(command: str) -> int:
 # Session context (injected as --append-system-prompt before every prompt step)
 # ---------------------------------------------------------------------------
 GET_METADATA_SH = Path(".claude/helpers/get_metadata.sh")
+NOTIFY_SH = Path(".claude/helpers/notify.sh")
+
+
+def notify(message: str, title: str = "pipeline") -> None:
+    """Best-effort notification via .claude/helpers/notify.sh. Silent if missing."""
+    if not NOTIFY_SH.exists():
+        return
+    try:
+        subprocess.run(
+            [str(NOTIFY_SH), message, title],
+            timeout=10,
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+
+def _format_duration(seconds: float) -> str:
+    s = int(seconds)
+    if s < 60:
+        return f"{s}s"
+    m, s = divmod(s, 60)
+    if m < 60:
+        return f"{m}m{s:02d}s"
+    h, m = divmod(m, 60)
+    return f"{h}h{m:02d}m"
 
 
 def _gh_owner_repo() -> str:
@@ -449,6 +475,7 @@ def run_pipeline(
     }
 
     header(pipeline.name)
+    started = datetime.now()
 
     for step in pipeline.steps:
         output = render(step.output, ctx) if step.output else ""
@@ -496,6 +523,12 @@ def run_pipeline(
                     code = run_claude_stream(claude_args + ["-p", prompt])
 
         if code != 0:
+            duration = _format_duration((datetime.now() - started).total_seconds())
+            notify(
+                f"[{pipeline.name}] failed at step `{step.id}` "
+                f"(exit {code}) after {duration}",
+                title=f"pipeline:{pipeline.name}",
+            )
             raise SystemExit(
                 f"{RED}Step `{step.id}` failed (exit {code}){RESET}"
             )
