@@ -186,11 +186,36 @@ main() {
     print_header "Git configuration"
     update_gitignore
 
+    # Detect git repo state for the post-install hint.
+    local git_state="ok"
+    if [ ! -d "$TARGET_DIR/.git" ]; then
+        git_state="not_a_repo"
+    elif ! git -C "$TARGET_DIR" remote get-url origin >/dev/null 2>&1; then
+        git_state="no_origin"
+    fi
+
     print_header "Installation complete"
     if [ "$DRY_RUN" = true ]; then
         print_message "$YELLOW" "Dry run. No changes made."
     else
         print_message "$GREEN" "ok configuration installed"
+
+        if [ "$git_state" != "ok" ]; then
+            echo ""
+            print_message "$YELLOW" "Heads up: this directory is not a git repo with an 'origin' remote."
+            print_message "$YELLOW" "Claude needs one to push branches and open PRs. To set it up:"
+            echo ""
+            if [ "$git_state" = "not_a_repo" ]; then
+                echo "    git init"
+                echo "    git add ."
+                echo "    git commit -m 'initial commit'"
+            fi
+            echo "    gh repo create <name> --source=. --private --remote=origin --push"
+            echo "    # or, if the remote already exists on GitHub:"
+            echo "    git remote add origin git@github.com:<owner>/<name>.git"
+            echo "    git push -u origin main"
+        fi
+
         echo ""
         echo "Next steps:"
         echo "  - Set up GitHub token (so Claude can push branches and open PRs in this repo):"
