@@ -255,6 +255,14 @@ main() {
         install_file "$SCRIPT_DIR/.mcp.json" "$TARGET_DIR/.mcp.json" ".mcp.json"
     fi
 
+    # Install READTHISFIRST.md only on first install (no existing .claude/VERSION).
+    # On re-runs, skip whether the file is present (don't clobber edits) or absent
+    # (user already read it and deleted it - don't bring it back).
+    if [ -f "$SCRIPT_DIR/READTHISFIRST.md" ] && [ ! -f "$TARGET_DIR/.claude/VERSION" ]; then
+        print_header "Installing READTHISFIRST.md"
+        install_file "$SCRIPT_DIR/READTHISFIRST.md" "$TARGET_DIR/READTHISFIRST.md" "READTHISFIRST.md"
+    fi
+
     # Runtime directories (gitignored, populated at runtime)
     print_header "Creating runtime directories"
     local dirs=(".claude/index" ".claude/index-cache" ".claude/logs" ".claude/memories")
@@ -326,12 +334,23 @@ main() {
 
         echo ""
         echo "Next steps:"
-        echo "  1. Set up GitHub token (so Claude can push branches and open PRs in this repo):"
+        local n=1
+        if [ -f "$TARGET_DIR/READTHISFIRST.md" ]; then
+            echo "  $n. Read READTHISFIRST.md - quick map of what got installed and what to do first"
+            n=$((n + 1))
+        fi
+        echo "  $n. Set up GitHub token (so Claude can push branches and open PRs in this repo):"
         echo "       uv run .claude/helpers/setup-github-token.py"
-        echo "  2. Try a slash command: /research, /plan, /build, /review, /pr-review, /ship"
-        echo "  3. Run a pipeline:"
+        n=$((n + 1))
+        echo "  $n. Protect the main branch (require PRs, block direct pushes):"
+        echo "       uv run .claude/helpers/setup-branch-protection.py"
+        n=$((n + 1))
+        echo "  $n. Try a slash command: /research, /plan, /build, /review, /pr, /pr-review, /ship, /release"
+        n=$((n + 1))
+        echo "  $n. Run a pipeline:"
         echo "       ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""
-        echo "  4. Optional: export CONTEXT7_API_KEY=... in your shell profile to raise Context7 rate limits (works without)"
+        n=$((n + 1))
+        echo "  $n. Optional: export CONTEXT7_API_KEY=... in your shell profile to raise Context7 rate limits (works without)"
     fi
 }
 
