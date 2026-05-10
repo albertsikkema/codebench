@@ -144,3 +144,16 @@ Headless browser automation for testing and visual verification.
 Navigate → snapshot → interact → verify. Always use `browser_snapshot` to get element refs before clicking/typing.
 
 Playwright is the **default browser tool** — use it for all UI testing, form filling, user flow automation, and visual verification.
+
+### Containerized runtime — reaching the host's localhost
+
+Claude runs inside a `claude-safe` container, so `http://localhost:PORT` and `http://127.0.0.1:PORT` resolve to the container itself, not the user's host machine. A dev server running on the host is **not** reachable that way.
+
+When the user gives you a `localhost` / `127.0.0.1` URL for a service running on their host, swap the host part for `host.docker.internal` before navigating:
+
+- `http://localhost:5173` → `http://host.docker.internal:5173`
+- `http://127.0.0.1:5500/test.html` → `http://host.docker.internal:5500/test.html`
+
+If `host.docker.internal` itself fails to resolve (Linux without Docker Desktop and without `--add-host=host.docker.internal:host-gateway`), tell the user — the container has no path to the host's loopback and they need to either pass that flag, run the dev server inside the container, or expose it on a routable interface. Don't silently fall back to `localhost`.
+
+External URLs (anything not on the host's loopback) work normally, subject to the firewall allowlist when `claude-safe` is run without `--no-firewall`.
