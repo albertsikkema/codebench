@@ -230,7 +230,7 @@ func fireAndForget(entryType string, logFile string, entryJSON []byte) {
 	}
 
 	pp := ProcessPayload{
-		LogFile:   filepath.Join(projectDir, ".claude", "workspace", "logs", logFile),
+		LogFile:   filepath.Join(projectDir, ".claude", "logs", logFile),
 		EntryJSON: entryJSON,
 	}
 

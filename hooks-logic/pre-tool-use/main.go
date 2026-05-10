@@ -354,7 +354,7 @@ func respondAllowWithRewrite(command string) {
 func auditLog(toolName string, toolInput map[string]any, decision, reason, mode string) {
 	defer func() { recover() }() // never panic
 
-	logDir := filepath.Join(projectDir, ".claude", "workspace", "logs")
+	logDir := filepath.Join(projectDir, ".claude", "logs")
 	os.MkdirAll(logDir, 0o755)
 	logPath := filepath.Join(logDir, "hook-audit.jsonl")
 
