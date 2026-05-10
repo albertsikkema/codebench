@@ -1,0 +1,149 @@
+{
+  "enabledMcpjsonServers": [
+    "context7",
+    "code-index",
+    "playwright"
+  ],
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:*)",
+      "Task",
+
+      "Bash(ls *)",
+      "Bash(tree *)",
+      "Bash(file *)",
+      "Bash(du *)",
+      "Bash(wc *)",
+
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(whoami)",
+      "Bash(uname *)",
+      "Bash(date *)",
+      "Bash(* --version)",
+      "Bash(* --help *)",
+
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch -a *)",
+      "Bash(git branch -l *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git checkout -b *)",
+
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh api *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(jq *)",
+
+      "Bash(npm run test *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run build *)",
+      "Bash(npm list *)",
+      "Bash(npm outdated *)",
+      "Bash(npm install *)",
+
+      "Bash(pytest *)",
+      "Bash(python -m pytest *)",
+
+      "Bash(uv sync *)",
+      "Bash(uv run *)",
+      "Bash(pip install *)",
+
+      "Bash(docker ps *)",
+      "Bash(docker images *)",
+      "Bash(docker logs *)",
+      "Bash(docker compose up *)",
+      "Bash(docker compose down *)",
+
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_verify_text_visible",
+      "mcp__playwright__browser_verify_element_visible",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_wait_for"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./.env.development)",
+      "Read(./.env.staging)",
+      "Read(.envrc)",
+      "Read(./secrets/**)",
+      "Read(~/.aws/**)",
+      "Read(./.vault-token)",
+      "Read(./.htpasswd)",
+      "Read(./.pgpass)",
+      "Read(./.my.cnf)",
+      "Read(~/.docker/config.json)",
+      "Read(./*.tfstate)",
+
+      "Bash(git branch -D *)",
+      "Bash(git checkout -- *)",
+
+      "Bash(rm /var/log/*)",
+      "Bash(truncate -s 0 /var/log/*)",
+      "Bash(history | grep -i password*)",
+
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(chown *)",
+      "Bash(shutdown *)",
+      "Bash(reboot)",
+      "Bash(halt)",
+
+      "Bash(terraform destroy *)",
+      "Bash(terraform apply -destroy *)",
+      "Bash(pulumi destroy *)",
+
+      "Bash(aws ec2 terminate-instances *)",
+      "Bash(aws rds delete-db-instance *)",
+      "Bash(aws cloudformation delete-stack *)",
+      "Bash(aws dynamodb delete-table *)",
+      "Bash(gcloud projects delete *)",
+      "Bash(gcloud compute instances delete *)",
+
+      "Bash(kubectl delete namespace *)",
+      "Bash(kubectl delete deployment *)",
+      "Bash(kubectl delete -f *)",
+
+      "Bash(* DROP TABLE *)",
+      "Bash(* DROP DATABASE *)",
+      "Bash(* TRUNCATE TABLE *)",
+      "Bash(redis-cli FLUSHALL *)",
+      "Bash(redis-cli FLUSHDB *)",
+      "Bash(* dropDatabase *)",
+
+      "Bash(docker system prune *)",
+      "Bash(docker volume rm *)",
+
+      "Bash(crontab -r *)",
+      "Bash(systemctl disable *)",
+
+      "Bash(curl -d @* *)",
+      "Bash(curl -F file=@* *)",
+      "Bash(curl --data-binary @* *)",
+      "Bash(scp * *:*)",
+      "Bash(rsync * *:*)"
+    ]
+  }
+}
