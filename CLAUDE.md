@@ -66,6 +66,6 @@ Unknown variables raise `ValueError`. Steps that omit `interactive`, or that set
 - **Don't strip `--no-firewall` from `CLAUDE_SAFE_CMD`.** Pipelines run on the user's machine and the firewall is opt-in for individual sessions, not the default for orchestrated runs.
 - **Server steps auto-sync.** After every `prompt:` step in `runner: server` mode, `.claude/pipelines/pipeline.py` calls `claude-server --sync <session>` to rsync the remote workspace back. Don't add a manual sync step.
 - **Don't add a slash command that runs `.claude/pipelines/pipeline.py`.** It would invoke `claude-safe` from inside a container, which doesn't work.
-- **Stream-json formatter is shared code.** If `format_event` / `_format_tool_call` need changes, the source of truth is `examples/claude-setup/.claude/helpers/_shared.py`. Keep `.claude/pipelines/pipeline.py` in sync rather than diverging.
+- **Stream-json formatter lives in `.claude/pipelines/pipeline.py`.** `format_event` / `_format_tool_call` are the local source of truth — edit them in place.
 - **Step output paths are templates, not promises.** `.claude/pipelines/pipeline.py` renders `output` and exposes it as `{{ output }}` inside the body, but doesn't itself create or verify the file. The prompt or command has to write there.
 - **`build.yaml` setup runs locally even in server mode.** The setup script creates the branch + PR on the host's repo, then `claude-server` rsyncs that branch state to the VM for the build/review/triage steps.
