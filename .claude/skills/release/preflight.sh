@@ -9,7 +9,7 @@ set -euo pipefail
 BUMP_TYPE="${1:-patch}"
 
 # ── gtk proxy ───────────────────────────────────────────────────
-GTK=".claude/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+GTK=".claude/hooks/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
 
 # ── Default branch ──────────────────────────────────────────────
 DEFAULT_BRANCH=""

@@ -71,7 +71,7 @@
       "Bash(docker compose up *)",
       "Bash(docker compose down *)",
 
-      "Bash(*/.claude/gtk/gtk-* *)",
+      "Bash(*/.claude/hooks/gtk/gtk-* *)",
 
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_snapshot",

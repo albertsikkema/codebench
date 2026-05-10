@@ -713,7 +713,7 @@ func tryGtkRewrite(command string) string {
 	}
 
 	// Resolve gtk binary path (use absolute path so it works regardless of CWD)
-	gtkBin := filepath.Join(projectDir, fmt.Sprintf(".claude/gtk/gtk-%s-%s",
+	gtkBin := filepath.Join(projectDir, fmt.Sprintf(".claude/hooks/gtk/gtk-%s-%s",
 		strings.ToLower(runtime.GOOS),
 		runtime.GOARCH))
 

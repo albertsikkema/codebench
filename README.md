@@ -16,9 +16,9 @@ YAML-driven multi-step pipeline runner for [`claude-safe`](examples/claude-safe)
 Examples:
 
 ```bash
-./pipeline.py pipelines/research-plan.yaml "rate limiting strategies for our API"
-./pipeline.py pipelines/research-plan.yaml --model sonnet "topic"
-CLAUDE_MODEL=sonnet ./pipeline.py pipelines/research-plan.yaml "topic"
+./pipeline.py .claude/pipelines/research-plan.yaml "rate limiting strategies for our API"
+./pipeline.py .claude/pipelines/research-plan.yaml --model sonnet "topic"
+CLAUDE_MODEL=sonnet ./pipeline.py .claude/pipelines/research-plan.yaml "topic"
 ```
 
 The runner prints a colored, summarized stream of each step's tool calls and assistant text to stderr. Interactive steps inherit the TTY directly.
@@ -68,7 +68,7 @@ Long-running Claude sessions accumulate context that biases later turns. Splitti
 
 ```
 pipeline.py              # the runner
-pipelines/               # YAML pipeline definitions
+.claude/pipelines/       # YAML pipeline definitions + helper scripts
 .claude/commands/        # slash commands invoked inside steps (e.g. /research, /plan)
 .claude/templates/       # output templates referenced by those commands
 examples/                # reference repos this builds on (claude-safe, claude-setup, sandcastle)

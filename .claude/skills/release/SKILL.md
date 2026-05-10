@@ -15,7 +15,7 @@ Optional: version bump type -- `patch` (default), `minor`, or `major`.
 Use the gtk proxy for all `git diff` and `git log` commands (see gtk rule for details):
 
 ```bash
-GTK=".claude/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+GTK=".claude/hooks/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
 ```
 
 ## Steps

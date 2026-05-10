@@ -586,7 +586,7 @@ func TestTryGtkRewrite(t *testing.T) {
 	defer func() { projectDir = old }()
 
 	gtkExists := false
-	gtkBin := filepath.Join(projectDir, ".claude/gtk/gtk-"+gtkPlatform())
+	gtkBin := filepath.Join(projectDir, ".claude/hooks/gtk/gtk-"+gtkPlatform())
 	if _, err := os.Stat(gtkBin); err == nil {
 		gtkExists = true
 	}
@@ -627,7 +627,7 @@ func TestTryGtkRewrite(t *testing.T) {
 		"make build",
 		// Already has gtk
 		"gtk git log",
-		".claude/gtk/gtk-linux-arm64 git status",
+		".claude/hooks/gtk/gtk-linux-arm64 git status",
 		// Piped
 		"git log | head -5",
 		// Chained

@@ -34,7 +34,7 @@ If filtered output seems incomplete or you need full output for debugging,
 use the gtk binary directly with `proxy`:
 
 ```bash
-.claude/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') proxy git log -10
+.claude/hooks/gtk/gtk-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') proxy git log -10
 ```
 
 **When to bypass:**

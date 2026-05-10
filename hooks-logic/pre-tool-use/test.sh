@@ -342,7 +342,7 @@ check "piped git not rewritten" allow \
 check "chained commands not rewritten" allow \
   '{"tool_name":"Bash","tool_input":{"command":"git fetch && git log -3"}}'
 check "already-gtk not rewritten" allow \
-  '{"tool_name":"Bash","tool_input":{"command":".claude/gtk/gtk-linux-arm64 git status"}}'
+  '{"tool_name":"Bash","tool_input":{"command":".claude/hooks/gtk/gtk-linux-arm64 git status"}}'
 
 # Non-matching commands should pass through
 check "echo allowed" allow \

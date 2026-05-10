@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A YAML-driven multi-step pipeline runner for `claude-safe` and `claude-server`. Each step launches a fresh container — i.e. fresh Claude context — so a "pipeline" is a way to chain prompts that hand off artifacts (files on disk) without sharing conversation history. Steps run either locally (`runner: safe` → `claude-safe`) or remotely on a dev VM (`runner: server` → `claude-server`). A step can also be a plain shell `command:` that runs on the host regardless of the pipeline's runner — useful for deterministic Python setup before the LLM steps.
 
-The product is `pipeline.py`, the helper scripts under `pipelines/scripts/`, and the YAML files under `pipelines/`. The `examples/` tree contains reference repos (`claude-safe`, `claude-setup`, `sandcastle`, `project-server-main`) that this code is built on top of — read them for context, but they are not part of the product.
+The product is `pipeline.py`, the helper scripts under `.claude/pipelines/scripts/`, and the YAML files under `.claude/pipelines/`. The `examples/` tree contains reference repos (`claude-safe`, `claude-setup`, `sandcastle`, `project-server-main`) that this code is built on top of — read them for context, but they are not part of the product.
 
 ## Common commands
 
 ```bash
-./pipeline.py pipelines/research-plan.yaml "your topic"     # run a pipeline
-./pipeline.py pipelines/research-plan.yaml --model sonnet "topic"
-./pipeline.py pipelines/build.yaml --runner safe "plans/foo.md"   # override server→safe
-CLAUDE_MODEL=sonnet ./pipeline.py pipelines/research-plan.yaml "topic"
+./pipeline.py .claude/pipelines/research-plan.yaml "your topic"     # run a pipeline
+./pipeline.py .claude/pipelines/research-plan.yaml --model sonnet "topic"
+./pipeline.py .claude/pipelines/build.yaml --runner safe "plans/foo.md"   # override server→safe
+CLAUDE_MODEL=sonnet ./pipeline.py .claude/pipelines/research-plan.yaml "topic"
 ```
 
 `pipeline.py` is a `uv run --script` shebang with PEP 723 inline metadata — no separate venv or `pip install` needed, `uv` resolves `pyyaml` on first run. There are no tests, linters, or CI.
@@ -26,7 +26,7 @@ CLAUDE_MODEL=sonnet ./pipeline.py pipelines/research-plan.yaml "topic"
   - `prompt:` step with `runner: safe` → `run_claude_safe`/`run_claude_interactive` (stream-json or TTY).
   - `prompt:` step with `runner: server` → `run_claude_server` (`claude-server -p ... --follow`, captures session ID from `==> Session: <id>`, then `claude-server --sync <id>` rsyncs the remote workspace back). The `interactive` flag is ignored in server mode — there is no local TTY.
 - **`CLAUDE_SAFE_CMD = ["claude-safe", "--no-firewall", "--"]`** at the top of `pipeline.py` is the fixed prefix for local steps. The `--` is required so `claude-safe` treats the rest as Claude args, not its own flags.
-- **`pipelines/scripts/`** — helper Python scripts called from `command:` steps (e.g. `build_setup.py` does branch + PR creation in pure Python before the server LLM steps run). Each is a `uv run --script` PEP 723 shebang.
+- **`.claude/pipelines/scripts/`** — helper Python scripts called from `command:` steps (e.g. `build_setup.py` does branch + PR creation in pure Python before the server LLM steps run). Each is a `uv run --script` PEP 723 shebang.
 - **One container per step.** Steps don't share conversation state — they communicate by writing files (typically into `.claude/memories/`) and referencing those paths in the next step's prompt via `{{ steps.<id>.output }}`. The `setup` shell step in `build.yaml` is the canonical example.
 - **Session context auto-injected on every `prompt:` step.** Before invoking claude(-safe|-server), `pipeline.py` shells out to `.claude/helpers/get_metadata.sh` (single source of truth for date/time, repo, branch, commit) and appends a `GitHub owner/repo:` line derived from `origin`. The result is passed via `--append-system-prompt`. Step prompts can reference owner/repo/date directly without `gh repo view` or `date`. Recomputed per step, so post-`setup` steps see the new branch.
 
