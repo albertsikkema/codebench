@@ -13,7 +13,7 @@ When plan mode is entered (via EnterPlanMode), follow this enhanced research-dri
 
 Always reference files with their **full relative path** from the project root — never bare filenames. This ensures agents can open files directly without searching.
 
-- Good: `.claude/pipelines/scripts/build_setup.py`, `.claude/helpers/setup-github-token.py`, `pipeline.py`
+- Good: `.claude/pipelines/scripts/build_setup.py`, `.claude/helpers/setup-github-token.py`, `.claude/pipelines/pipeline.py`
 - Bad: `build_setup.py`, `setup-github-token.py`, `pipeline.py` (without path when ambiguous)
 
 This applies everywhere in the plan: Current State Analysis, Implementation Approach, phase descriptions, code snippets, and references.
