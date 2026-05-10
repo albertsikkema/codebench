@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 import webbrowser
+from datetime import date
 
 from colorama import Fore, Style, init
 
@@ -336,38 +337,54 @@ def check_existing_token() -> dict[str, str] | None:
 
 
 def save_token_to_env(token: str, token_name: str, token_expires: str) -> None:
-    """Save GH_TOKEN to .env file in the repo root."""
+    """Save GH_TOKEN to .env file in the repo root.
+
+    Three cases:
+      1. real GH_TOKEN= already present -> replace it (and our comment lines above).
+      2. only a commented placeholder (# GH_TOKEN=...) is present -> replace that line.
+      3. nothing about GH_TOKEN -> append, or create the file.
+    """
     env_path = os.path.join(os.getcwd(), ".env")
-    comment1 = "# GH_TOKEN — used by Claude Code for container-based development (repo scope only)"
+    today = date.today().isoformat()
+    comment_why = "# GH_TOKEN - used by Claude Code for container-based development (repo scope only)"
+    comment_added = f"# added by setup-github-token.py on {today}"
     meta_parts = []
     if token_name:
         meta_parts.append(f"name: {token_name}")
     if token_expires:
         meta_parts.append(f"expires: {token_expires}")
-    comment2 = f"# {', '.join(meta_parts)}" if meta_parts else ""
+    comment_meta = f"# {', '.join(meta_parts)}" if meta_parts else ""
     entry = f"GH_TOKEN={token}"
 
-    block = comment1
-    if comment2:
-        block += f"\n{comment2}"
-    block += f"\n{entry}"
+    lines = [comment_why, comment_added]
+    if comment_meta:
+        lines.append(comment_meta)
+    lines.append(entry)
+    block = "\n".join(lines)
 
     if os.path.exists(env_path):
         with open(env_path, "r") as f:
             content = f.read()
 
-        # Replace existing GH_TOKEN line (with optional comment lines above it)
         if re.search(r"^GH_TOKEN=", content, re.MULTILINE):
             content = re.sub(
-                r"(^# GH_TOKEN[^\n]*\n)?(^#[^\n]*\n)?^GH_TOKEN=[^\n]*",
+                r"(^# GH_TOKEN[^\n]*\n)?(^# added by setup-github-token\.py[^\n]*\n)?(^# name:[^\n]*\n)?^GH_TOKEN=[^\n]*",
                 block,
                 content,
                 count=1,
                 flags=re.MULTILINE,
             )
             print_ok("Updated GH_TOKEN in .env")
+        elif re.search(r"^[ \t]*#[ \t]*GH_TOKEN=", content, re.MULTILINE):
+            content = re.sub(
+                r"^[ \t]*#[ \t]*GH_TOKEN=[^\n]*",
+                block,
+                content,
+                count=1,
+                flags=re.MULTILINE,
+            )
+            print_ok("Replaced GH_TOKEN placeholder in .env")
         else:
-            # Append to existing file
             if not content.endswith("\n"):
                 content += "\n"
             content += f"\n{block}\n"
