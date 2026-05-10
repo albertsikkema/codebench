@@ -214,6 +214,22 @@ main() {
         git_state="no_origin"
     fi
 
+    # Check runtime dependencies (don't fail; just hint).
+    print_header "Dependency check"
+    local missing=()
+    check_dep() {
+        local cmd="$1" hint="$2"
+        if command -v "$cmd" >/dev/null 2>&1; then
+            print_message "$GREEN" "  ok $cmd"
+        else
+            print_message "$YELLOW" "  missing $cmd  -  $hint"
+            missing+=("$cmd")
+        fi
+    }
+    check_dep "uv"           "install: curl -fsSL https://astral.sh/uv/install.sh | sh"
+    check_dep "claude-safe"  "install: curl -fsSL https://raw.githubusercontent.com/albertsikkema/claude-safe/main/install.sh | bash"
+    check_dep "claude-server" "(optional, only needed for runner: server pipelines)"
+
     print_header "Installation complete"
     if [ "$DRY_RUN" = true ]; then
         print_message "$YELLOW" "Dry run. No changes made."
