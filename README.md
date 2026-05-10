@@ -4,6 +4,26 @@ YAML-driven multi-step pipeline runner for [`claude-safe`](examples/claude-safe)
 
 Steps run either locally (`runner: safe` → `claude-safe`), remotely on a dev VM (`runner: server` → `claude-server`), or as plain shell on the host (`command:`, regardless of runner).
 
+## Install
+
+One-line install into the current directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/install.sh | bash
+```
+
+Pin to a branch or tag, install elsewhere, or preview without writing:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/install.sh | bash -s -- --branch v0.1.0
+curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/install.sh | bash -s -- /path/to/project
+curl -fsSL https://raw.githubusercontent.com/albertsikkema/codebench/main/install.sh | bash -s -- --dry-run
+```
+
+The installer drops `.claude/` (skills, commands, helpers, hooks with prebuilt binaries, rules, templates, settings, pipelines) and `.mcp.json` into the target, creates the runtime dirs, and adds `.claude/index`, `.claude/index-cache`, `.claude/logs`, `.claude/memories` to `.git/info/exclude` so they don't get committed. Existing files in `.claude/` that the installer ships are overwritten; anything you added stays.
+
+Re-run the curl one-liner any time to pull updates — it always fetches the latest version of the requested branch / tag.
+
 ## Requirements
 
 - [`uv`](https://github.com/astral-sh/uv) — `pipeline.py` is a `uv run --script` shebang with PEP 723 inline metadata; `pyyaml` resolves on first run
