@@ -92,6 +92,7 @@ install_tree() {
 update_gitignore() {
     local gi="$TARGET_DIR/.gitignore"
     local entries=(".claude" ".mcp.json" ".env" ".playwright/" ".playwright-mcp/")
+    local marker="# Added by codebench install-helper.sh"
 
     if [ "$DRY_RUN" = true ]; then
         print_message "$YELLOW" "  [DRY RUN] would update .gitignore"
@@ -100,11 +101,30 @@ update_gitignore() {
 
     [ ! -f "$gi" ] && touch "$gi"
 
+    # Collect entries that aren't already present.
+    local to_add=()
     for entry in "${entries[@]}"; do
         if ! grep -qxF "$entry" "$gi" 2>/dev/null; then
-            echo "$entry" >> "$gi"
-            print_message "$GREEN" "  ok added: $entry"
+            to_add+=("$entry")
         fi
+    done
+
+    if [ ${#to_add[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    # Prepend a marker comment block on the first run only.
+    if ! grep -qxF "$marker" "$gi" 2>/dev/null; then
+        # Add a leading blank line if file is non-empty and doesn't end in one.
+        if [ -s "$gi" ] && [ "$(tail -c1 "$gi")" != "" ]; then
+            echo "" >> "$gi"
+        fi
+        echo "$marker" >> "$gi"
+    fi
+
+    for entry in "${to_add[@]}"; do
+        echo "$entry" >> "$gi"
+        print_message "$GREEN" "  ok added: $entry"
     done
 }
 
