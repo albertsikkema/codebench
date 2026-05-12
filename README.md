@@ -43,12 +43,12 @@ Some user-invoked, some model-invoked when the work matches.
 
 | Skill | Purpose |
 | --- | --- |
-| `/pr` | Generate PR description, sync branch, push, create or update via `gh` |
-| `/ship` | Commit, push, open PR, comment, squash-merge, return to default branch |
-| `/release` | Production release: changelog, version bump, PR, merge, tag (two-branch or single-branch) |
+| `pr` | Generate PR description, sync branch, push, create or update via `gh` |
+| `ship` | Commit, push, open PR, comment, squash-merge, return to default branch |
+| `release` | Production release: changelog, version bump, PR, merge, tag (two-branch or single-branch) |
 | `setup-release` | Scaffold `scripts/changelog-release.sh`, GitHub Actions release workflow, Makefile targets |
-| `/cleanup` | Post-implementation cleanup: rationalise docs, capture decisions, update project state |
-| `/vulnerability-check` | Scan deps against OSV, GitHub Advisory, CISA KEV, NCSC |
+| `cleanup` | Post-implementation cleanup: rationalise docs, capture decisions, update project state |
+| `vulnerability-check` | Scan deps against OSV, GitHub Advisory, CISA KEV, NCSC |
 | `front-end-design` | Creative direction for distinctive frontends — avoid generic AI aesthetics |
 | `ui-component-creator` | Structural patterns for React / TypeScript components |
 | `mobile-friendly-design` | Responsive web patterns: phone, tablet, desktop |
