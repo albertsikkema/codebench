@@ -28,33 +28,33 @@ After install, see `READTHISFIRST.md` in the target for the first-run checklist 
 
 User-invoked workflows.
 
-| Command | Purpose |
-| --- | --- |
-| `/research` | Parallel sub-agent investigation of a codebase question, synthesised into one answer |
-| `/plan` | Interactive, iterative implementation planning — skeptical, thorough, file:line references |
-| `/build` | Execute an approved plan from `.claude/memories/` phase by phase against its success criteria |
-| `/review` | Senior-engineer code review (quality, security, performance, maintainability) |
-| `/pr-review` | Multi-agent PR review: 4 core agents always, up to 6 specialised agents picked from the diff |
-| `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, dead code, circular deps) |
+| Command          | Purpose                                                                                       |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `/research`      | Parallel sub-agent investigation of a codebase question, synthesised into one answer          |
+| `/plan`          | Interactive, iterative implementation planning — skeptical, thorough, file:line references    |
+| `/build`         | Execute an approved plan from `.claude/memories/` phase by phase against its success criteria |
+| `/review`        | Senior-engineer code review (quality, security, performance, maintainability)                 |
+| `/pr-review`     | Multi-agent PR review: 4 core agents always, up to 6 specialised agents picked from the diff  |
+| `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, dead code, circular deps)      |
 
 ### Skills (`.claude/skills/`)
 
 Some user-invoked, some model-invoked when the work matches.
 
-| Skill | Purpose |
-| --- | --- |
-| `pr` | Generate PR description, sync branch, push, create or update via `gh` |
-| `ship` | Commit, push, open PR, comment, squash-merge, return to default branch |
-| `release` | Production release: changelog, version bump, PR, merge, tag (two-branch or single-branch) |
-| `setup-release` | Scaffold `scripts/changelog-release.sh`, GitHub Actions release workflow, Makefile targets |
-| `cleanup` | Post-implementation cleanup: rationalise docs, capture decisions, update project state |
-| `vulnerability-check` | Scan deps against OSV, GitHub Advisory, CISA KEV, NCSC |
-| `front-end-design` | Creative direction for distinctive frontends — avoid generic AI aesthetics |
-| `ui-component-creator` | Structural patterns for React / TypeScript components |
-| `mobile-friendly-design` | Responsive web patterns: phone, tablet, desktop |
-| `accessibility` | WCAG 2.2 patterns: semantic HTML, ARIA, keyboard nav, contrast, motion safety |
-| `visual-verify` | Render-and-screenshot verification via the Playwright MCP server |
-| `api-tools` | Author / maintain Bruno API collections (Git-native Postman alternative) |
+| Skill                    | Purpose                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `pr`                     | Generate PR description, sync branch, push, create or update via `gh`                      |
+| `ship`                   | Commit, push, open PR, comment, squash-merge, return to default branch                     |
+| `release`                | Production release: changelog, version bump, PR, merge, tag (two-branch or single-branch)  |
+| `setup-release`          | Scaffold `scripts/changelog-release.sh`, GitHub Actions release workflow, Makefile targets |
+| `cleanup`                | Post-implementation cleanup: rationalise docs, capture decisions, update project state     |
+| `vulnerability-check`    | Scan deps against OSV, GitHub Advisory, CISA KEV, NCSC                                     |
+| `front-end-design`       | Creative direction for distinctive frontends — avoid generic AI aesthetics                 |
+| `ui-component-creator`   | Structural patterns for React / TypeScript components                                      |
+| `mobile-friendly-design` | Responsive web patterns: phone, tablet, desktop                                            |
+| `accessibility`          | WCAG 2.2 patterns: semantic HTML, ARIA, keyboard nav, contrast, motion safety              |
+| `visual-verify`          | Render-and-screenshot verification via the Playwright MCP server                           |
+| `api-tools`              | Author / maintain Bruno API collections (Git-native Postman alternative)                   |
 
 ### Sub-agents (`.claude/agents/`)
 
@@ -77,11 +77,11 @@ Source lives in `hooks-logic/pre-tool-use/` and `hooks-logic/post-tool-use/`. Se
 
 ### MCP servers (`.mcp.json`)
 
-| Server | Source | Purpose |
-| --- | --- | --- |
+| Server       | Source                                           | Purpose                                                                                                                                                                                                                                                                      |
+| ------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `code-index` | bundled Go binary in `.claude/mcp-index-server/` | Tree-sitter AST indexer for Python, JS/TS, Go, C/C++, Rust — `find_symbol`, `find_usage`, `get_call_graph`, `trace_data_flow`, `find_unhandled_errors`, `find_hotspots`, `analyze_coupling`, etc. Auto-indexes on startup, watches for changes, writes `.claude/index/*.md`. |
-| `context7` | `npx @upstash/context7-mcp` | Up-to-date library docs. Resolve a library ID, then query docs — used before guessing an API. |
-| `playwright` | `npx @playwright/mcp` (headless Chromium) | Visual verification, form filling, accessibility-tree inspection. |
+| `context7`   | `npx @upstash/context7-mcp`                      | Up-to-date library docs. Resolve a library ID, then query docs — used before guessing an API.                                                                                                                                                                                |
+| `playwright` | `npx @playwright/mcp` (headless Chromium)        | Visual verification, form filling, accessibility-tree inspection.                                                                                                                                                                                                            |
 
 The `code-index` server keeps `.claude/index/` fresh on every file change and branch switch — agents treat its markdown indexes as the canonical project map (see `.claude/rules/session-startup.md`).
 
@@ -100,27 +100,27 @@ Steps run locally (`runner: safe` → `claude-safe`), remotely on a dev VM (`run
 
 Bundled pipelines:
 
-| File | Runner | What it does |
-| --- | --- | --- |
-| `.claude/pipelines/research-plan.yaml` | safe | `/research <topic>` → `/plan` (interactive) |
-| `.claude/pipelines/build.yaml` | server | local shell setup (branch + PR via `scripts/build_setup.py`) → `/build` → `/pr-review` → triage |
+| File                                   | Runner | What it does                                                                                    |
+| -------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| `.claude/pipelines/research-plan.yaml` | safe   | `/research <topic>` → `/plan` (interactive)                                                     |
+| `.claude/pipelines/build.yaml`         | server | local shell setup (branch + PR via `scripts/build_setup.py`) → `/build` → `/pr-review` → triage |
 
 YAML schema:
 
 ```yaml
-name: <pipeline name>            # required
-description: <one-liner>         # optional
-runner: safe|server              # optional, default `safe` — applies to prompt: steps
-runner_args: ["--github", ...]   # optional, default [] — passed through to claude-server
+name: <pipeline name> # required
+description: <one-liner> # optional
+runner: safe|server # optional, default `safe` — applies to prompt: steps
+runner_args: ["--github", ...] # optional, default [] — passed through to claude-server
 
 steps:
-  - id: <step id>                # required, used in {{ steps.<id>.output }}
-    interactive: true|false      # required (ignored for server / command, but must be set)
-    output: <path template>      # optional, exposed as {{ output }} inside this step
+  - id: <step id> # required, used in {{ steps.<id>.output }}
+    interactive: true|false # required (ignored for server / command, but must be set)
+    output: <path template> # optional, exposed as {{ output }} inside this step
     # exactly one of:
-    prompt: |                    # LLM step; runner-dispatched
+    prompt: | # LLM step; runner-dispatched
       ...
-    command: |                   # shell step on host (bash -c), regardless of runner
+    command: | # shell step on host (bash -c), regardless of runner
       ...
 ```
 
@@ -133,7 +133,7 @@ Before every `prompt:` step the runner shells out to `.claude/helpers/get_metada
 Reference material agents pull into context when relevant.
 
 - `best_practices/` — accessibility, api-design, authorization, container-security, data-integrity, error-handling, layered-architecture, llm-integration-patterns, observability, performance, privacy-by-design, resilience, structured-logging, testing-strategy, zero-downtime-deployment, and more
-- `compliance_rules/` — audit-trail, auth-boundaries, configuration-security, cryptography, data-lifecycle, gdpr-*, resilience, secure-coding, secure-development, session-cookie, supply-chain, plus a `standards-index.md` mapping rules to ISO 27001 / NIS2 / OWASP ASVS / GDPR
+- `compliance_rules/` — audit-trail, auth-boundaries, configuration-security, cryptography, data-lifecycle, gdpr-\*, resilience, secure-coding, secure-development, session-cookie, supply-chain, plus a `standards-index.md` mapping rules to ISO 27001 / NIS2 / OWASP ASVS / GDPR
 - `security_rules/core/`, `security_rules/owasp/` — OWASP Top 10 and core security rules
 - `documentation/` — evidence documents the compliance agents cite
 
