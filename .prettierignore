@@ -1,0 +1,29 @@
+# Build outputs / deps
+node_modules
+dist
+coverage
+
+# Reference vault -- never format
+examples
+
+# Harness assets -- managed separately
+.claude
+
+# Python -- Prettier has no business touching these
+pipeline.py
+*.py
+__pycache__
+.venv
+
+# Pipeline definitions -- YAML alignment matters, hand-edit
+pipelines/*.yaml
+pipelines/*.yml
+
+# Memory snapshots
+.claude/memories
+
+# Existing project files -- not ours to reformat
+*.md
+.mcp.json
+Makefile
+*.sh
