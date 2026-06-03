@@ -32,7 +32,7 @@ User-invoked workflows.
 | --- | --- |
 | `/research` | Parallel sub-agent investigation of a codebase question, synthesised into one answer |
 | `/plan` | Interactive, iterative implementation planning — skeptical, thorough, file:line references |
-| `/build` | Execute an approved plan from `.claude/memories/` phase by phase against its success criteria |
+| `/build` | Execute an approved plan from `plans/` phase by phase against its success criteria |
 | `/review` | Senior-engineer code review (quality, security, performance, maintainability) |
 | `/pr-review` | Multi-agent PR review: 4 core agents always, up to 6 specialised agents picked from the diff |
 | `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, dead code, circular deps) |

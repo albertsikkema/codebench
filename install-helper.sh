@@ -251,7 +251,7 @@ main() {
 
     # Runtime directories (gitignored, populated at runtime)
     print_header "Creating runtime directories"
-    local dirs=(".claude/index" ".claude/index-cache" ".claude/logs" ".claude/memories")
+    local dirs=(".claude/index" ".claude/index-cache" ".claude/logs" "plans")
     for dir in "${dirs[@]}"; do
         if [ "$DRY_RUN" != true ]; then
             mkdir -p "$TARGET_DIR/$dir"

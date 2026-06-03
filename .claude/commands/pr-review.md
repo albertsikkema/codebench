@@ -358,10 +358,10 @@ Combine the agent outputs into a unified report:
 
 Always do BOTH of these:
 
-1. **Save locally** to `.claude/memories/YYYY-MM-DD-pr-{number}-review.md`
+1. **Save locally** to `plans/YYYY-MM-DD-pr-{number}-review.md`
 2. **Post as a PR comment** so the review is visible on GitHub:
    ```bash
-   gh pr comment {number} --body-file .claude/memories/YYYY-MM-DD-pr-{number}-review.md
+   gh pr comment {number} --body-file plans/YYYY-MM-DD-pr-{number}-review.md
    ```
 
 This happens unconditionally — whether running interactively or as a subprocess.

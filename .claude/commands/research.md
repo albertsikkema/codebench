@@ -149,7 +149,7 @@ Then wait for the user's research query.
 6. **Save research document:**
    - Run `.claude/helpers/get_metadata.sh` to collect metadata (date, git commit, branch, repo name, UUID, timestamp for filename)
    - Use the template at `.claude/templates/research.md`
-   - Write the research document to `.claude/memories/YYYY-MM-DD-description.md` (add ticket number if relevant, e.g. `.claude/memories/YYYY-MM-DD-ENG-1478-description.md`). The content includes frontmatter and all research findings.
+   - Write the research document to `plans/YYYY-MM-DD-description.md` (add ticket number if relevant, e.g. `plans/YYYY-MM-DD-ENG-1478-description.md`). The content includes frontmatter and all research findings.
    - Fill in frontmatter using the metadata from `get_metadata.sh`
    - Fill in the Quality Context section with findings from the quality-risk-analyzer agent
    - Omit template sections that have no findings — don't include empty headings
