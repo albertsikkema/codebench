@@ -8,8 +8,7 @@ You just installed [codebench](https://github.com/albertsikkema/codebench) into 
 - `.mcp.json` — MCP server config: `code-index`, `context7`, `playwright`
 - `.env` — seeded with a commented `GH_TOKEN` placeholder (gitignored). `setup-github-token.py` writes the token here.
 - `.gitignore` — appended `.claude`, `.mcp.json`, `.env`, `.playwright/`, `.playwright-mcp/`, `READTHISFIRST.md` so none of this gets committed
-- `.claude/index/`, `.claude/index-cache/`, `.claude/logs/` — runtime dirs, populated as you go
-- `plans/` — research docs, implementation plans, PR reviews (outside `.claude/` so pipeline steps can write here)
+- `.claude/index/`, `.claude/index-cache/`, `.claude/logs/`, `.claude/memories/` — runtime dirs, populated as you go
 
 The installer overwrites files it ships and leaves any additions of yours alone. Re-run the curl one-liner any time to pull updates.
 

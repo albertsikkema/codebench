@@ -71,7 +71,7 @@ After structure approval:
    - Run `.claude/helpers/get_metadata.sh` to generate all relevant metadata
 
 2. **Save the plan** using the template at `.claude/templates/plan.md`
-   - Write the plan document to `plans/YYYY-MM-DD-description.md` (add ticket number if relevant, e.g. `plans/YYYY-MM-DD-ENG-1478-description.md`). Use kebab-case for the description.
+   - Write the plan document to `.claude/memories/YYYY-MM-DD-description.md` (add ticket number if relevant, e.g. `.claude/memories/YYYY-MM-DD-ENG-1478-description.md`). Use kebab-case for the description.
    - The content includes frontmatter and all plan sections.
 
 3. **Write the plan document** using the metadata and the following structure:
@@ -232,7 +232,7 @@ After structure approval:
 
    ## References
 
-   - Related research: `plans/[relevant].md`
+   - Related research: `.claude/memories/[relevant].md`
    - Similar implementation: `[file:line]`
    ````
 

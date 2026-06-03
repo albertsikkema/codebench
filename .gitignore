@@ -58,5 +58,5 @@ examples/
 # Codebench related
 .claude/index
 .claude/index-cache
-plans
+.claude/memories
 .claude/logs

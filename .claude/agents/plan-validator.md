@@ -21,8 +21,8 @@ You validate implementations by:
 When invoked, you will:
 
 1. **Locate the implementation plan**:
-   - You will be given a path to a plan file in `plans/` — read it directly with the Read tool.
-   - If no path is given, list candidates with `ls -1t plans/*.md` and ask which one to validate.
+   - You will be given a path to a plan file in `.claude/memories/` — read it directly with the Read tool.
+   - If no path is given, list candidates with `ls -1t .claude/memories/*.md` and ask which one to validate.
 
 2. **Gather implementation evidence**:
    - Run: `git log --oneline -n 20` to see recent commits.

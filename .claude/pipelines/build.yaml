@@ -10,7 +10,7 @@ runner_args: ["--github"]
 steps:
   - id: setup
     interactive: false
-    output: plans/{{ timestamp }}-pr-url.txt
+    output: .claude/memories/{{ timestamp }}-pr-url.txt
     command: |
       {{ pipeline_dir }}/scripts/build_setup.py \
         --plan "{{ input }}" \

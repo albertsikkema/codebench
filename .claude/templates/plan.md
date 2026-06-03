@@ -150,5 +150,5 @@ status: draft
 
 ## References
 
-- Related research: `plans/[relevant].md`
+- Related research: `.claude/memories/[relevant].md`
 - Similar implementation: `[file:line]`
