@@ -21,3 +21,9 @@ pipelines/*.yml
 
 # Memory snapshots
 .claude/memories
+
+# Hand-aligned project docs and config
+CLAUDE.md
+README.md
+READTHISFIRST.md
+.mcp.json

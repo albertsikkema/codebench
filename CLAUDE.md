@@ -33,26 +33,24 @@ CLAUDE_MODEL=sonnet ./.claude/pipelines/pipeline.py .claude/pipelines/research-p
 ## YAML schema
 
 ```yaml
-name: <pipeline name> # required
-description: <one-liner> # optional
-runner: safe|server # optional, default `safe` — applies to prompt: steps
-runner_args: ["--github", ...] # optional, default [] — extra args passed to claude-server
+name: <pipeline name>            # required
+description: <one-liner>         # optional
+runner: safe|server              # optional, default `safe` — applies to prompt: steps
+runner_args: ["--github", ...]   # optional, default [] — extra args passed to claude-server
 
 steps:
-  - id: <step id> # required, used in {{ steps.<id>.output }}
-    interactive:
-      true|false # required — must be set explicitly per step
-      # (ignored when runner is `server` or step is `command:`)
-    output: <path template> # optional, exposed as {{ output }} inside this step
+  - id: <step id>                # required, used in {{ steps.<id>.output }}
+    interactive: true|false      # required — must be set explicitly per step
+                                 # (ignored when runner is `server` or step is `command:`)
+    output: <path template>      # optional, exposed as {{ output }} inside this step
     # Exactly one of `prompt:` or `command:` per step:
-    prompt: | # LLM step; runner-dispatched (safe/server)
+    prompt: |                    # LLM step; runner-dispatched (safe/server)
       ...
-    command: | # Shell step on host; supports template variables
+    command: |                   # Shell step on host; supports template variables
       ...
 ```
 
 **Template variables** resolved by `render()`:
-
 - `{{ input }}` — the positional CLI input (joined args)
 - `{{ timestamp }}` — pipeline start time, formatted `%Y-%m-%dT%H-%M-%S`
 - `{{ pipeline_dir }}` — absolute path to the directory containing the pipeline YAML; use this to invoke helper scripts via `{{ pipeline_dir }}/scripts/foo.py` so the pipeline works regardless of the caller's cwd

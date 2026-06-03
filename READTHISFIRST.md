@@ -26,19 +26,19 @@ The installer overwrites files it ships and leaves any additions of yours alone.
 
 ## Slash commands
 
-| Command                | What it does                                                        |
-| ---------------------- | ------------------------------------------------------------------- |
-| `/research`            | Parallel sub-agent investigation of a codebase question             |
-| `/plan`                | Interactive, iterative implementation planning                      |
-| `/build`               | Execute an approved plan phase by phase                             |
-| `/review`              | Senior-engineer code review (quality, security, performance)        |
-| `/pr`                  | Generate a PR description, push, open or update the PR              |
-| `/pr-review`           | Multi-agent PR review (4 core + up to 6 specialized)                |
-| `/ship`                | Commit, push, open PR, merge with squash, return to default         |
-| `/release`             | Changelog, version bump, PR, merge, tag                             |
-| `/cleanup`             | Rationalize docs and capture decisions after an implementation      |
-| `/vulnerability-check` | Scan dependencies (OSV, GitHub Advisory, CISA KEV, NCSC)            |
-| `/code-analysis`       | Run code-index analysis (hotspots, coupling, unhandled errors, ...) |
+| Command | What it does |
+| --- | --- |
+| `/research` | Parallel sub-agent investigation of a codebase question |
+| `/plan` | Interactive, iterative implementation planning |
+| `/build` | Execute an approved plan phase by phase |
+| `/review` | Senior-engineer code review (quality, security, performance) |
+| `/pr` | Generate a PR description, push, open or update the PR |
+| `/pr-review` | Multi-agent PR review (4 core + up to 6 specialized) |
+| `/ship` | Commit, push, open PR, merge with squash, return to default |
+| `/release` | Changelog, version bump, PR, merge, tag |
+| `/cleanup` | Rationalize docs and capture decisions after an implementation |
+| `/vulnerability-check` | Scan dependencies (OSV, GitHub Advisory, CISA KEV, NCSC) |
+| `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, ...) |
 
 Model-invoked skills (run automatically when relevant): `front-end-design`, `ui-component-creator`, `mobile-friendly-design`, `accessibility`, `visual-verify`, `api-tools`, `setup-release`.
 
