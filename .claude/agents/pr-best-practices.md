@@ -25,7 +25,7 @@ Use the code-index MCP tools (`get_project_summary`, `find_symbol`, `search_symb
 ## Your Process
 
 1. Read the codebase index (critical first step above)
-2. Read any project docs at the repo root: `CLAUDE.md`, `README.md`, plus anything under `.claude/library/` or `plans/` that documents conventions
+2. Read any project docs at the repo root: `CLAUDE.md`, `README.md`, plus anything under `.claude/library/` or `.claude/memories/` that documents conventions
 3. Check if the PR follows or violates documented patterns
 4. Identify opportunities for helper reuse and code deduplication
 
