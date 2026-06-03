@@ -4,7 +4,7 @@ description: Run /research then /plan with fresh contexts.
 steps:
   - id: research
     interactive: false
-    output: .claude/memories/{{ timestamp }}-research.md
+    output: plans/{{ timestamp }}-research.md
     prompt: |
       /research {{ input }}
 
@@ -12,7 +12,7 @@ steps:
 
   - id: plan
     interactive: true
-    output: .claude/memories/{{ timestamp }}-plan.md
+    output: plans/{{ timestamp }}-plan.md
     prompt: |
       /plan based on the research at `{{ steps.research.output }}`.
 

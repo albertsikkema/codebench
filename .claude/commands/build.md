@@ -1,4 +1,4 @@
-You are tasked with implementing an approved technical plan stored as a markdown file in `.claude/memories/`. Plans contain phases with specific changes and success criteria.
+You are tasked with implementing an approved technical plan stored as a markdown file in `plans/`. Plans contain phases with specific changes and success criteria.
 
 ## Getting Started
 
@@ -16,7 +16,7 @@ When given a plan file path:
 
 If no plan path was provided, list candidate plans:
 ```bash
-ls -1t .claude/memories/*.md
+ls -1t plans/*.md
 ```
 Show the user the recent plans and ask which one to implement.
 
@@ -66,7 +66,7 @@ Use the Task tool to launch the `plan-validator` agent:
 ```
 Task tool with:
 - subagent_type: plan-validator
-- prompt: "Validate the implementation of `.claude/memories/<plan-file>.md`. Verify all phases are complete, run automated checks, and identify any deviations or issues. Return a comprehensive validation report with specific findings."
+- prompt: "Validate the implementation of `plans/<plan-file>.md`. Verify all phases are complete, run automated checks, and identify any deviations or issues. Return a comprehensive validation report with specific findings."
 ```
 
 ### Step 2: Analyze Validation Results
