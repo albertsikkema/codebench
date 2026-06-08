@@ -8,7 +8,7 @@ A single-pass review tries to do too much at once, leading to shallow analysis. 
 - **Code Quality agent** (opus): Does meticulous line-by-line analysis
 - **Security agent**: Applies security vulnerability checklists
 - **Best Practices agent**: Checks project-specific patterns
-- **Test Coverage agent**: Focuses on test adequacy
+- **Test Review agent**: Focuses on test coverage, test quality defects, and test smells
 
 **Specialized agents (run when relevant):**
 - **Privacy agent**: PII detection, GDPR, data minimization
@@ -124,12 +124,12 @@ prompt: |
   Follow your instructions: read the codebase index first, then check against project patterns.
 ```
 
-### Agent 4: Test Coverage (pr-test-coverage)
+### Agent 4: Test Review (pr-test-review)
 
 ```
-subagent_type: pr-test-coverage
+subagent_type: pr-test-review
 prompt: |
-  Review this PR for test coverage.
+  Review this PR's tests for coverage, quality defects, and test smells.
 
   ## PR Info
   - PR Number: #{number}
@@ -139,7 +139,7 @@ prompt: |
   ## PR Diff
   [paste the diff]
 
-  Follow your instructions: read the codebase index first, then check test coverage.
+  Follow your instructions: read the codebase index first, then read both test files and the production code they cover, then run the full checklist.
 ```
 
 ### Specialized Agents (run only when triage selects them)
@@ -298,8 +298,8 @@ Combine the agent outputs into a unified report:
 ### Best Practices
 [Pattern violations]
 
-### Test Coverage
-[Missing critical tests]
+### Test Review
+[Missing critical tests, rotten green tests, mock abuse]
 
 [Include additional subsections only for specialized agents that ran and reported high-priority issues]
 
@@ -311,7 +311,7 @@ Combine the agent outputs into a unified report:
 [Non-blocking suggestions from all agents that ran]
 
 ### Test Suggestions
-[Nice-to-have test additions]
+[Nice-to-have test additions, test smell fixes]
 
 ---
 
@@ -345,9 +345,9 @@ Combine the agent outputs into a unified report:
 </details>
 
 <details>
-<summary>Full Test Coverage Report</summary>
+<summary>Full Test Review Report</summary>
 
-[Paste full output from pr-test-coverage agent]
+[Paste full output from pr-test-review agent]
 
 </details>
 

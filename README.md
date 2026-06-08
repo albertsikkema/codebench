@@ -61,7 +61,7 @@ Some user-invoked, some model-invoked when the work matches.
 Specialised agents spawned by slash commands. Each is a markdown file with a tool allowlist and a system prompt.
 
 - **Code understanding**: `codebase-analyzer`, `codebase-pattern-finder`, `code-simplifier`
-- **PR review fleet**: `pr-security`, `pr-code-quality`, `pr-best-practices`, `pr-test-coverage`, `pr-breaking-changes`, `pr-data-integrity`, `pr-error-handling`, `pr-observability`, `pr-privacy`, `pr-compliance`
+- **PR review fleet**: `pr-security`, `pr-code-quality`, `pr-best-practices`, `pr-test-review`, `pr-breaking-changes`, `pr-data-integrity`, `pr-error-handling`, `pr-observability`, `pr-privacy`, `pr-compliance`
 - **Planning / quality**: `quality-risk-analyzer`, `plan-validator`, `system-architect`
 - **Research**: `web-researcher`, `documentation-researcher`, `library-analyzer`, `project-context-analyzer`, `compliance-research`
 - **Ops**: `oncall-guide`, `verify-app`
