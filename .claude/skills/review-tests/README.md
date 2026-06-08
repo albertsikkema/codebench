@@ -39,7 +39,7 @@ The smells detected by this skill:
 
 ### LLM detection effectiveness
 
-Saavedra et al. (2025) evaluated LLMs on test smell detection across Java projects and found detection rates up to 96% for classic smells. LLMs outperform rule-based tools on smells that require semantic understanding (like Eager Test and Assertion Roulette) but perform comparably on structural smells (like Long Test).
+Santana Jr et al. (2025) evaluated LLMs on test smell detection across Java projects and found detection rates up to 96% for classic smells. LLMs outperform rule-based tools on smells that require semantic understanding (like Eager Test and Assertion Roulette) but perform comparably on structural smells (like Long Test).
 
 Key finding: LLMs are particularly good at detecting rotten green tests because they can reason about whether an assertion actually validates the behavior described in the test name -- something static analysis tools cannot do.
 
@@ -59,7 +59,7 @@ Empirical studies reveal systematic defects in LLM-generated tests. This skill i
 
 #### 1. Hallucinated APIs (34-62% of generated tests don't compile)
 
-LLMs reference methods, classes, and parameters that don't exist. An empirical study on Defects4J found 30.68% of invalid tests fail due to "semantically-coherent but undefined identifiers" -- names that look plausible but are fabricated. Another 17.25% fail from wrong parameter types/counts, and 10.38% from attempting to instantiate abstract classes. (Alshahwan et al., 2025; Yang et al., 2024)
+LLMs reference methods, classes, and parameters that don't exist. An empirical study on Defects4J found 30.68% of invalid tests fail due to "semantically-coherent but undefined identifiers" -- names that look plausible but are fabricated. Another 17.25% fail from wrong parameter types/counts, and 10.38% from attempting to instantiate abstract classes. (Chu et al., 2025; Yang et al., 2024)
 
 #### 2. Missing triggering inputs (the #1 weakness)
 
@@ -74,7 +74,7 @@ LLMs reference methods, classes, and parameters that don't exist. An empirical s
 
 #### 4. Near-zero mutation scores
 
-Despite passing, LLM-generated tests approach zero mutation score because they test "ineffective logic such as interfaces or empty methods." The best LLM detected only 8 of 163 bugs on Defects4J with 0.74% precision -- roughly 135 false alarms per real fault found. (Alshahwan et al., 2025)
+Despite passing, LLM-generated tests approach zero mutation score because they test "ineffective logic such as interfaces or empty methods." The best LLM detected only 8 of 163 bugs on Defects4J with 0.74% precision -- roughly 135 false alarms per real fault found. (Chu et al., 2025)
 
 #### 5. Systematic blind spots
 
@@ -100,9 +100,9 @@ Test generation tools often filter out failing tests before reporting, actively 
 - Meszaros, G. (2007). *xUnit Test Patterns: Refactoring Test Code*. Addison-Wesley.
 - Delplanque, J., Ducasse, S., Fuhrman, G., & Anquetil, N. (2019). "Rotten Green Tests." *Proc. 41st Int. Conf. on Software Engineering (ICSE)*.
 - Freeman, S. & Pryce, N. (2009). *Growing Object-Oriented Software, Guided by Tests*. Addison-Wesley.
-- Saavedra, N. et al. (2025). "Can LLMs Detect Test Smells? An Exploratory Study." arXiv:2506.07594.
+- Santana Jr, E.G. et al. (2025). "Evaluating LLMs Effectiveness in Detecting and Correcting Test Smells: An Empirical Study." arXiv:2506.07594.
 - affaan-m/everything-claude-code (2025). "AI Regression Testing" SKILL.md. GitHub.
 - Spadini, D. et al. (2020). "Investigating Severity Thresholds for Test Smells." *Proc. 17th Int. Conf. on Mining Software Repositories (MSR)*.
-- Yang, Y. et al. (2024). "An Empirical Study of Unit Test Generation with Large Language Models." arXiv:2406.18181. (arXiv preprint, not peer-reviewed)
-- Alshahwan, N. et al. (2025). "Large Language Models for Unit Test Generation: Achievements, Challenges, and the Road Ahead." arXiv:2511.21382.
+- Yang, L. et al. (2024). "On the Evaluation of Large Language Models in Unit Test Generation." arXiv:2406.18181. (arXiv preprint, not peer-reviewed)
+- Chu, B. et al. (2025). "Large Language Models for Unit Test Generation: Achievements, Challenges, and Opportunities." arXiv:2511.21382.
 - CodeRabbit (2025). "State of AI vs Human Code Generation Report." coderabbit.ai/blog.
