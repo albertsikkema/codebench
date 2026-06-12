@@ -1,4 +1,4 @@
-.PHONY: build-hooks test-hooks
+.PHONY: build-hooks test-hooks update-index-server
 
 HOOK_DEST := .claude/hooks/binaries
 PRE_SRC   := hooks-logic/pre-tool-use
@@ -22,3 +22,6 @@ test-hooks: build-hooks
 	@cd $(PRE_SRC) && go test ./...
 	@sh $(PRE_SRC)/test.sh
 	@cd $(POST_SRC) && go test ./...
+
+update-index-server:
+	@bash .claude/mcp-index-server/update.sh
