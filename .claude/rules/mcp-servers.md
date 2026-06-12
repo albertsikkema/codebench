@@ -66,6 +66,10 @@ STOP and use code-index instead if you catch yourself reaching for Grep, Glob, o
 
 **Rule of thumb**: If the question mentions a *variable*, *parameter*, *field*, *input*, *value*, or *data* flowing/passing/reaching somewhere → use `trace_data_flow`. If the question is about *which functions exist* or *who calls whom* → use `find_symbol` / `get_call_graph`.
 
+### Full codebase analysis
+
+**Call `get_analysis_playbook()` first** when asked to do a full codebase health check, quality audit, or architecture review. It returns a phased playbook that tells you which tools to call in what order and how to cross-reference findings. Optional `focus` parameter: `architecture`, `quality`, `smells`, `robustness`, `maintenance`.
+
 ### When to use the code analysis tools
 
 These tools perform **automated code analysis** — use them proactively during code reviews, architecture assessments, and quality audits:
