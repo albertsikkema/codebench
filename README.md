@@ -36,6 +36,7 @@ User-invoked workflows.
 | `/review-cb` | Senior-engineer code review (quality, security, performance, maintainability) |
 | `/pr-review` | Multi-agent PR review: 4 core agents always, up to 6 specialised agents picked from the diff |
 | `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, dead code, circular deps) |
+| `/code-audit` | Full-codebase audit: 6 parallel agents (security, deps, data governance, observability, resilience, docs) + structural scan |
 
 ### Skills (`.claude/skills/`)
 
