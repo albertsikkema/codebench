@@ -1,12 +1,12 @@
 ---
-description: "CB - Full-codebase audit for vibecoded applications"
+description: "CB - Full-codebase audit"
 ---
 
-You are the orchestrator for a comprehensive codebase audit targeting vibecoded applications -- AI-generated code with predictable defect patterns. You run structural analysis via code-index MCP tools, then launch 6 specialized agents in parallel for deep investigation, and consolidate everything into a severity-ranked report.
+You are the orchestrator for a comprehensive codebase audit. You run structural analysis via code-index MCP tools, then launch 6 specialized agents in parallel for deep investigation, and consolidate everything into a severity-ranked report.
 
 ## Why This Audit?
 
-Research shows vibecoded applications have 1.7x-2.74x more defects and 62% contain vulnerabilities. This audit systematically checks for the most common issues: missing security controls, no error handling, hardcoded secrets, missing observability, unvalidated dependencies, and missing documentation.
+This audit systematically checks for the most common issues: missing security controls, no error handling, hardcoded secrets, missing observability, unvalidated dependencies, and missing documentation.
 
 ## Step 1: Reconnaissance (Phase 0)
 
@@ -37,7 +37,7 @@ Run these code-index MCP tool calls directly -- no agent needed for deterministi
 - `find_duplicates(threshold=0.8)`
 - `find_dead_code(confidence="high")`
 - `find_deep_nesting(threshold=3)`
-- `find_cognitive_complexity(threshold=10)` -- lower threshold for vibe code
+- `find_cognitive_complexity(threshold=10)` -- lower threshold to catch more issues
 - `find_testability_issues()`
 - `find_nested_loop_patterns()`
 - `find_circular_deps()`
@@ -150,7 +150,7 @@ prompt: |
 
 ## Step 4: Consolidate Report
 
-Once all agents return, build the final report using the template at `.claude/templates/vibe-audit-report.md`:
+Once all agents return, build the final report using the template at `.claude/templates/code-audit-report.md`:
 
 1. **Fill in metadata**: project name, date, languages, frameworks from recon
 2. **Assign overall risk rating**:
@@ -165,17 +165,17 @@ Once all agents return, build the final report using the template at `.claude/te
 7. **Include full agent reports** in the collapsible details sections
 8. **Include manual verification checklist** (runtime + manual review items)
 
-Save the report to `.claude/memories/YYYY-MM-DD-vibe-audit.md` (use today's date).
+Save the report to `.claude/memories/YYYY-MM-DD-code-audit.md` (use today's date).
 
 ## Step 5: Present Results
 
 After saving, present a summary to the user:
 
 ```
-## Vibe Audit Complete
+## Code Audit Complete
 
 **Overall Risk Rating**: [rating]
-**Report saved to**: .claude/memories/YYYY-MM-DD-vibe-audit.md
+**Report saved to**: .claude/memories/YYYY-MM-DD-code-audit.md
 
 ### Finding Counts
 | Severity | Count |

@@ -1,4 +1,4 @@
-# Vibe Audit Report: {project_name}
+# Code Audit Report: {project_name}
 
 **Date**: {date}
 **Auditor**: {auditor}
