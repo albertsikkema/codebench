@@ -212,7 +212,6 @@ func handleWebFetch(hook HookInput) {
 	fireAndForget("web_fetch", "web-fetches.jsonl", entryJSON)
 }
 
-
 // ProcessPayload is what the parent sends to the detached child process
 type ProcessPayload struct {
 	LogFile    string          `json:"log_file"`
@@ -299,7 +298,9 @@ func doProcess() {
 	if pp.LogFile != "" {
 		os.MkdirAll(filepath.Dir(pp.LogFile), 0o755)
 		f, err := os.OpenFile(pp.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err == nil {
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] web-log: failed to open %s: %v\n", pp.LogFile, err)
+		} else {
 			f.Write(pp.EntryJSON)
 			f.Write([]byte("\n"))
 			f.Close()
@@ -332,4 +333,3 @@ func doProcess() {
 		resp.Body.Close()
 	}
 }
-

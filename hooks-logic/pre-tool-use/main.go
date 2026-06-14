@@ -352,13 +352,14 @@ func respondAllowWithRewrite(command string) {
 // --- Audit logging ---
 
 func auditLog(toolName string, toolInput map[string]any, decision, reason, mode string) {
-	defer func() { recover() }() // never panic
-
 	logDir := filepath.Join(projectDir, ".claude", "logs")
 	os.MkdirAll(logDir, 0o755)
 	logPath := filepath.Join(logDir, "hook-audit.jsonl")
 
-	summary, _ := json.Marshal(toolInput)
+	summary, err := json.Marshal(toolInput)
+	if err != nil {
+		summary = []byte(`"<marshal error>"`)
+	}
 	if len(summary) > 256 {
 		summary = append(summary[:253], '.', '.', '.')
 	}
@@ -375,11 +376,13 @@ func auditLog(toolName string, toolInput map[string]any, decision, reason, mode 
 
 	data, err := json.Marshal(entry)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] audit log marshal failed: %v\n", err)
 		return
 	}
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] audit log open failed: %v\n", err)
 		return
 	}
 	defer f.Close()

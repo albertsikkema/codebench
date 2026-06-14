@@ -27,6 +27,7 @@ import argparse
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import threading
@@ -57,6 +58,39 @@ RESET = "\033[0m"
 CLAUDE_SAFE_CMD = ["claude-safe", "--no-firewall", "--"]
 
 _output_lock = threading.Lock()
+
+# Timeout (seconds) for LLM steps, sync, and shell steps.
+# Override via env: CLAUDE_STEP_TIMEOUT (LLM), CLAUDE_SYNC_TIMEOUT, CLAUDE_SHELL_TIMEOUT.
+_STEP_TIMEOUT = int(os.environ.get("CLAUDE_STEP_TIMEOUT", "3600"))
+_SYNC_TIMEOUT = int(os.environ.get("CLAUDE_SYNC_TIMEOUT", "300"))
+_SHELL_TIMEOUT = int(os.environ.get("CLAUDE_SHELL_TIMEOUT", "600"))
+
+# Track active child process for graceful shutdown.
+_active_proc: subprocess.Popen | None = None
+_active_proc_lock = threading.Lock()
+
+
+def _set_active(proc: subprocess.Popen | None) -> None:
+    global _active_proc
+    with _active_proc_lock:
+        _active_proc = proc
+
+
+def _shutdown_handler(signum: int, frame: object) -> None:
+    """Kill the active child process group on SIGINT/SIGTERM."""
+    with _active_proc_lock:
+        proc = _active_proc
+    if proc and proc.poll() is None:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except OSError:
+            pass
+    signame = signal.Signals(signum).name
+    raise SystemExit(f"\n{RED}Pipeline interrupted ({signame}){RESET}")
+
+
+signal.signal(signal.SIGINT, _shutdown_handler)
+signal.signal(signal.SIGTERM, _shutdown_handler)
 
 
 def _format_tool_call(tool_name: str, tool_input: dict | str) -> str:
@@ -163,13 +197,12 @@ def format_event(line: str) -> str | None:
 def run_claude_stream(args: list[str], prefix: str = "") -> int:
     """Run claude-safe with stream-json output. Returns exit code."""
     proc = subprocess.Popen(
-        CLAUDE_SAFE_CMD
-        + ["--verbose", "--output-format", "stream-json"]
-        + args,
+        CLAUDE_SAFE_CMD + ["--verbose", "--output-format", "stream-json"] + args,
         stdout=subprocess.PIPE,
         text=True,
         start_new_session=True,
     )
+    _set_active(proc)
     assert proc.stdout is not None
     for line in proc.stdout:
         formatted = format_event(line)
@@ -178,14 +211,30 @@ def run_claude_stream(args: list[str], prefix: str = "") -> int:
                 formatted = f"{DIM}[{prefix}]{RESET} {formatted}"
             with _output_lock:
                 print(formatted, file=sys.stderr, flush=True)
-    proc.wait()
+    try:
+        proc.wait(timeout=_STEP_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait()
+        raise SystemExit(f"{RED}Step timed out after {_STEP_TIMEOUT}s{RESET}")
+    finally:
+        _set_active(None)
     return proc.returncode
 
 
 def run_claude_interactive(args: list[str]) -> int:
     """Run claude-safe interactively. Returns exit code."""
-    result = subprocess.run(CLAUDE_SAFE_CMD + args, start_new_session=True)
-    return result.returncode
+    proc = subprocess.Popen(CLAUDE_SAFE_CMD + args, start_new_session=True)
+    _set_active(proc)
+    try:
+        proc.wait(timeout=_STEP_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait()
+        raise SystemExit(f"{RED}Step timed out after {_STEP_TIMEOUT}s{RESET}")
+    finally:
+        _set_active(None)
+    return proc.returncode
 
 
 # ---------------------------------------------------------------------------
@@ -222,6 +271,7 @@ def run_claude_server(
         text=True,
         start_new_session=True,
     )
+    _set_active(proc)
     assert proc.stdout is not None
     session_id: str | None = None
     for line in proc.stdout:
@@ -235,21 +285,40 @@ def run_claude_server(
             out = f"{DIM}[{prefix}]{RESET} {out}"
         with _output_lock:
             print(out, file=sys.stderr, flush=True)
-    proc.wait()
+    try:
+        proc.wait(timeout=_STEP_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait()
+        raise SystemExit(f"{RED}Server step timed out after {_STEP_TIMEOUT}s{RESET}")
+    finally:
+        _set_active(None)
     return proc.returncode, session_id
 
 
 def sync_claude_server(session_id: str) -> int:
     """Sync the remote workspace back to local via `claude-server --sync`."""
-    result = subprocess.run(
-        ["claude-server", "--sync", session_id], start_new_session=True
-    )
+    try:
+        result = subprocess.run(
+            ["claude-server", "--sync", session_id],
+            start_new_session=True,
+            timeout=_SYNC_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        raise SystemExit(f"{RED}Sync timed out after {_SYNC_TIMEOUT}s{RESET}")
     return result.returncode
 
 
 def run_shell(command: str) -> int:
     """Run a shell command on the host. Returns exit code."""
-    result = subprocess.run(["bash", "-c", command], start_new_session=True)
+    try:
+        result = subprocess.run(
+            ["bash", "-c", command],
+            start_new_session=True,
+            timeout=_SHELL_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        raise SystemExit(f"{RED}Shell step timed out after {_SHELL_TIMEOUT}s{RESET}")
     return result.returncode
 
 
@@ -436,15 +505,12 @@ def load_pipeline(path: Path) -> Pipeline:
     for raw in data["steps"]:
         sid = raw.get("id", "?")
         if "interactive" not in raw:
-            raise SystemExit(
-                f"{path}: step `{sid}` must set `interactive: true|false`"
-            )
+            raise SystemExit(f"{path}: step `{sid}` must set `interactive: true|false`")
         has_prompt = "prompt" in raw
         has_command = "command" in raw
         if has_prompt == has_command:
             raise SystemExit(
-                f"{path}: step `{sid}` must set exactly one of "
-                "`prompt:` or `command:`"
+                f"{path}: step `{sid}` must set exactly one of `prompt:` or `command:`"
             )
         steps.append(
             Step(
@@ -529,9 +595,7 @@ def run_pipeline(
                 f"(exit {code}) after {duration}",
                 title=f"pipeline:{pipeline.name}",
             )
-            raise SystemExit(
-                f"{RED}Step `{step.id}` failed (exit {code}){RESET}"
-            )
+            raise SystemExit(f"{RED}Step `{step.id}` failed (exit {code}){RESET}")
 
         ctx["steps"][step.id] = {"output": output}
 
