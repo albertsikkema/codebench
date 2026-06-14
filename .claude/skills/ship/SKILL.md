@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Commit, create PR, add comment, merge, checkout default branch, and pull
+description: "CB - Commit, create PR, add comment, merge, checkout default branch, and pull"
 user-invocable: true
 ---
 

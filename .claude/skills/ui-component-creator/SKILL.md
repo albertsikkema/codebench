@@ -1,6 +1,6 @@
 ---
 name: ui-component-creator
-description: Create React UI components following a project's design system. Use when building new components, buttons, cards, forms, inputs, modals, badges, or any frontend UI elements. Provides the structural patterns — project-specific skills provide the tokens.
+description: "CB - Create React UI components following a project's design system. Use when building new components, buttons, cards, forms, inputs, modals, badges, or any frontend UI elements. Provides the structural patterns — project-specific skills provide the tokens."
 ---
 
 # UI Component Creator

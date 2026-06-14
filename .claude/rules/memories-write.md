@@ -8,6 +8,6 @@ cat > .claude/memories/filename.md << 'EOF'
 EOF
 ```
 
-This applies to `/research`, `/plan`, `/pr-review`, and any other command that saves output to `.claude/memories/`.
+This applies to `/research`, `/plan-cb`, `/pr-review`, and any other command that saves output to `.claude/memories/`.
 
 When editing an existing file in `.claude/memories/`, use the Edit tool -- it is not blocked. Only initial file creation requires the Bash workaround.

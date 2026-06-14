@@ -31,9 +31,9 @@ User-invoked workflows.
 | Command | Purpose |
 | --- | --- |
 | `/research` | Parallel sub-agent investigation of a codebase question, synthesised into one answer |
-| `/plan` | Interactive, iterative implementation planning — skeptical, thorough, file:line references |
+| `/plan-cb` | Interactive, iterative implementation planning — skeptical, thorough, file:line references |
 | `/build` | Execute an approved plan from `.claude/memories/` phase by phase against its success criteria |
-| `/review` | Senior-engineer code review (quality, security, performance, maintainability) |
+| `/review-cb` | Senior-engineer code review (quality, security, performance, maintainability) |
 | `/pr-review` | Multi-agent PR review: 4 core agents always, up to 6 specialised agents picked from the diff |
 | `/code-analysis` | Run code-index analysis (hotspots, coupling, unhandled errors, dead code, circular deps) |
 
@@ -102,7 +102,7 @@ Bundled pipelines:
 
 | File | Runner | What it does |
 | --- | --- | --- |
-| `.claude/pipelines/research-plan.yaml` | safe | `/research <topic>` → `/plan` (interactive) |
+| `.claude/pipelines/research-plan.yaml` | safe | `/research <topic>` → `/plan-cb` (interactive) |
 | `.claude/pipelines/build.yaml` | server | local shell setup (branch + PR via `scripts/build_setup.py`) → `/build` → `/pr-review` → triage |
 
 YAML schema:

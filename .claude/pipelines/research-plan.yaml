@@ -1,5 +1,5 @@
 name: research-and-plan
-description: Run /research then /plan with fresh contexts.
+description: Run /research then /plan-cb with fresh contexts.
 
 steps:
   - id: research
@@ -14,6 +14,6 @@ steps:
     interactive: true
     output: .claude/memories/{{ timestamp }}-plan.md
     prompt: |
-      /plan based on the research at `{{ steps.research.output }}`.
+      /plan-cb based on the research at `{{ steps.research.output }}`.
 
       Save the plan to `{{ output }}` instead of the default path.

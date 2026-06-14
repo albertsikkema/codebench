@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Generate PR description, sync branch, push, and create/update PR
+description: "CB - Generate PR description, sync branch, push, and create/update PR"
 user-invocable: true
 ---
 

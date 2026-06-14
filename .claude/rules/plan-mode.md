@@ -61,7 +61,7 @@ Combine all sources before writing the plan:
 
 ### E. Write the Plan
 
-Use the plan template from `/plan` command (`.claude/commands/plan.md`):
+Use the plan template from `/plan-cb` command (`.claude/commands/plan-cb.md`):
 - Run `.claude/helpers/get_metadata.sh` for frontmatter
 - Follow the full template structure: Overview, Current State, Desired End State, What We're NOT Doing, Implementation Approach, Phases with Success Criteria, Quality Considerations, References
 - Include concrete code snippets and file:line references throughout
@@ -69,7 +69,7 @@ Use the plan template from `/plan` command (`.claude/commands/plan.md`):
 
 ### F. Quality Self-Review (3 Passes)
 
-As defined in the `/plan` command:
+As defined in the `/plan-cb` command:
 1. **Pass 1 — Code Snippet Review**: Check all code blocks for logic errors, data handling, resource management, code smells, language-specific issues
 2. **Pass 2 — Referenced Code Audit**: Read actual code at each file:line reference, verify it matches what the plan describes
 3. **Pass 3 — Design-Level Check**: Pattern consistency, security rules, helper reuse, layer violations, error handling coverage

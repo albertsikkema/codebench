@@ -1,6 +1,6 @@
 ---
 name: visual-verify
-description: "Visual verification of web UI using Playwright MCP. Navigate, screenshot, inspect accessibility tree, and verify rendered output at multiple viewports."
+description: "CB - Visual verification of web UI using Playwright MCP. Navigate, screenshot, inspect accessibility tree, and verify rendered output at multiple viewports."
 ---
 
 # Visual Verification (Playwright MCP)

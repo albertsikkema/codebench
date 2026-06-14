@@ -1,3 +1,7 @@
+---
+description: "CB - Parallel sub-agent codebase investigation, synthesized into one answer"
+---
+
 You are tasked with conducting comprehensive research across the codebase to answer user questions by spawning parallel sub-agents and synthesizing their findings.
 
 ## Initial Setup:

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Create a production release with changelog, version bump, PR, tag. Supports two-branch (dev->main) and single-branch (release branch->main) workflows.
+description: "CB - Create a production release with changelog, version bump, PR, tag. Supports two-branch (dev->main) and single-branch (release branch->main) workflows."
 user-invocable: true
 ---
 

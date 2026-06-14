@@ -1,6 +1,6 @@
 ---
 name: mobile-friendly-design
-description: "Use when building responsive web interfaces that must work across phone, tablet, and desktop. Covers mobile navigation, touch-friendly interactions, responsive layouts, and mobile form patterns. Complements ui-component-creator (structure) and front-end-design (creative direction). Not for native mobile apps — responsive web only."
+description: "CB - Use when building responsive web interfaces that must work across phone, tablet, and desktop. Covers mobile navigation, touch-friendly interactions, responsive layouts, and mobile form patterns. Complements ui-component-creator (structure) and front-end-design (creative direction). Not for native mobile apps — responsive web only."
 ---
 
 # Mobile-Friendly Design

@@ -331,7 +331,7 @@ main() {
         echo "  $n. Protect the main branch (require PRs, block direct pushes):"
         echo "       uv run .claude/helpers/setup-branch-protection.py"
         n=$((n + 1))
-        echo "  $n. Try a slash command: /research, /plan, /build, /review, /pr, /pr-review, /ship, /release"
+        echo "  $n. Try a slash command: /research, /plan-cb, /build, /review-cb, /pr, /pr-review, /ship, /release"
         n=$((n + 1))
         echo "  $n. Run a pipeline:"
         echo "       ./.claude/pipelines/pipeline.py .claude/pipelines/research-plan.yaml \"your topic\""

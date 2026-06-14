@@ -25,6 +25,14 @@ You MUST use code-index MCP tools FIRST when exploring or navigating the codebas
 | Search for AST patterns | Grep | `ast_query(pattern, language, path?, limit?)` |
 | Find error handling issues | Manual review | `find_unhandled_errors(language?, file?, limit?)` |
 | Find risky code hotspots | git log + manual | `find_hotspots(since?, min_changes?, limit?)` |
+| Find ownership risks | git log + manual | `find_ownership_risks(since?, min_contributors?, limit?)` |
+| Find hidden co-change deps | git log + manual | `find_temporal_coupling(since?, min_cochanges?, limit?)` |
+| Find complex functions | Manual review | `find_cognitive_complexity(threshold?, language?, file?)` |
+| Find bloated functions | Manual review | `find_bloated_functions(min_signals?, language?, file?)` |
+| Find deep nesting | Manual review | `find_deep_nesting(threshold?, language?, file?)` |
+| Find misplaced logic | Manual review | `find_feature_envy(ratio?, language?, file?)` |
+| Find nested loops (O(n^2)) | Manual review | `find_nested_loop_patterns(language?, file?)` |
+| Find testability issues | Manual review | `find_testability_issues(language?, file?)` |
 
 STOP and use code-index instead if you catch yourself reaching for Grep, Glob, or Read to find or understand code structure.
 
@@ -51,6 +59,14 @@ STOP and use code-index instead if you catch yourself reaching for Grep, Glob, o
 19. **"Find AST patterns"** → `ast_query(pattern, language, path?, limit?)` — run tree-sitter S-expression queries across the codebase. Supports all 5 languages. `limit` caps matches (1-500, default 100).
 20. **"Any error handling issues?"** → `find_unhandled_errors(language?, file?, limit?)` — detects bare/broad/empty except (Python), unchecked err (Go), await without try/catch (JS/TS), .unwrap() in non-test code (Rust). `limit` caps results (1-500, default 100).
 21. **"What are the riskiest files?"** → `find_hotspots(since?, min_changes?, limit?)` — combines git change frequency with code complexity to identify high-risk areas.
+22. **"Who owns this code?"** → `find_ownership_risks(since?, min_contributors?, limit?)` — finds distributed ownership (many contributors, no dominant owner) and bus-factor=1 files.
+23. **"What files secretly co-change?"** → `find_temporal_coupling(since?, min_cochanges?, max_commit_files?, limit?)` — finds files that frequently change together in git but have no structural dependency.
+24. **"Which functions are too complex?"** → `find_cognitive_complexity(threshold?, class_threshold?, language?, file?, limit?)` — SonarSource S3776 cognitive complexity. Default threshold 15.
+25. **"Which functions are bloated?"** → `find_bloated_functions(min_signals?, language?, file?, limit?)` — flags functions exceeding multiple thresholds (LOC, parameters, variables, branches, nesting, call targets). `min_signals` sets how many thresholds must be exceeded (default 2).
+26. **"Where is nesting too deep?"** → `find_deep_nesting(threshold?, language?, file?, limit?)` — SonarQube S134 deep nesting detection. Default threshold 3.
+27. **"Any misplaced logic?"** → `find_feature_envy(ratio?, min_external?, language?, file?, limit?)` — methods accessing another object's members more than their own.
+28. **"Any O(n^2) loops?"** → `find_nested_loop_patterns(language?, file?, limit?)` — detects nested loops that may indicate quadratic performance.
+29. **"What's hard to test?"** → `find_testability_issues(constructor_complexity?, chain_depth?, language?, file?, limit?)` — complex constructors, concrete dependencies, global state, Law of Demeter violations.
 
 ### When to use `trace_data_flow` instead of `find_symbol` / `get_call_graph`
 
@@ -74,13 +90,15 @@ STOP and use code-index instead if you catch yourself reaching for Grep, Glob, o
 
 These tools perform **automated code analysis** — use them proactively during code reviews, architecture assessments, and quality audits:
 
-- **Architecture review**: `find_circular_deps()` + `analyze_coupling()` → detect structural problems
-- **Code review**: `find_unhandled_errors(file="changed_file.py")` → catch error handling gaps in changed files
-- **Quality audit**: `find_hotspots()` → identify high-risk areas that need attention
+- **Architecture review**: `find_circular_deps()` + `analyze_coupling()` + `find_temporal_coupling()` → detect structural problems and hidden dependencies
+- **Code review**: `find_unhandled_errors(file="changed_file.py")` + `find_cognitive_complexity(file="changed_file.py")` → catch error handling and complexity gaps in changed files
+- **Quality audit**: `find_hotspots()` + `find_ownership_risks()` → identify high-risk areas and ownership gaps
+- **Code smells**: `find_bloated_functions()` + `find_deep_nesting()` + `find_feature_envy()` + `find_testability_issues()` → detect maintainability issues
+- **Performance**: `find_nested_loop_patterns()` → flag potential O(n^2)+ hotspots
 - **Custom linting**: `ast_query(pattern, language)` → find any structural pattern in the codebase
 - **Security review**: `find_unhandled_errors()` + `trace_data_flow()` → find both input handling and error handling issues
 
-Use `find_unhandled_errors` and `find_hotspots` PROACTIVELY during `/review` and `/pr-review` workflows.
+Use `find_unhandled_errors` and `find_hotspots` PROACTIVELY during `/review-cb` and `/pr-review` workflows.
 
 ### When to still use Grep/Glob
 

@@ -1,3 +1,7 @@
+---
+description: "CB - Run code-index analysis (hotspots, coupling, errors, dead code)"
+---
+
 You are tasked with running a comprehensive automated code analysis on the codebase using the code-index MCP server tools.
 
 ## Evidence-Based Approach
