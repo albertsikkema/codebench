@@ -1,6 +1,6 @@
 ---
 name: review-tests
-description: Review test quality for changed or specified test files. Detect test smells, skip-to-pass shortcuts, mock abuse, missing coverage, and contract drift.
+description: "CB - Review test quality for changed or specified test files. Detect test smells, skip-to-pass shortcuts, mock abuse, missing coverage, and contract drift."
 user-invocable: true
 ---
 

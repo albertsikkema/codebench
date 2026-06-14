@@ -1,3 +1,7 @@
+---
+description: "CB - Execute an approved plan from .claude/memories/ phase by phase"
+---
+
 You are tasked with implementing an approved technical plan stored as a markdown file in `.claude/memories/`. Plans contain phases with specific changes and success criteria.
 
 ## Getting Started

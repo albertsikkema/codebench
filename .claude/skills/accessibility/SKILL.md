@@ -1,6 +1,6 @@
 ---
 name: accessibility
-description: "WCAG 2.2 compliance patterns for web interfaces. Use when building or reviewing UI for accessibility — semantic HTML, ARIA, keyboard navigation, color contrast, motion safety, screen reader support, and automated testing. Complements ui-component-creator (structure), front-end-design (aesthetics), and mobile-friendly-design (responsive)."
+description: "CB - WCAG 2.2 compliance patterns for web interfaces. Use when building or reviewing UI for accessibility — semantic HTML, ARIA, keyboard navigation, color contrast, motion safety, screen reader support, and automated testing. Complements ui-component-creator (structure), front-end-design (aesthetics), and mobile-friendly-design (responsive)."
 ---
 
 # Accessibility (WCAG 2.2)

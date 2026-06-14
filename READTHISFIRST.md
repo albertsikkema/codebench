@@ -29,9 +29,9 @@ The installer overwrites files it ships and leaves any additions of yours alone.
 | Command | What it does |
 | --- | --- |
 | `/research` | Parallel sub-agent investigation of a codebase question |
-| `/plan` | Interactive, iterative implementation planning |
+| `/plan-cb` | Interactive, iterative implementation planning |
 | `/build` | Execute an approved plan phase by phase |
-| `/review` | Senior-engineer code review (quality, security, performance) |
+| `/review-cb` | Senior-engineer code review (quality, security, performance) |
 | `/pr` | Generate a PR description, push, open or update the PR |
 | `/pr-review` | Multi-agent PR review (4 core + up to 6 specialized) |
 | `/ship` | Commit, push, open PR, merge with squash, return to default |

@@ -1,3 +1,7 @@
+---
+description: "CB - Multi-agent PR review (4 core + up to 6 specialized agents)"
+---
+
 You are the orchestrator for a comprehensive PR review. You always spawn 4 core agents, then selectively add up to 6 specialized agents based on what the diff touches.
 
 ## Why Multiple Agents?

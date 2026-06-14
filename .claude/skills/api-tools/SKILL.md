@@ -1,6 +1,6 @@
 ---
 name: api-tools
-description: Create and manage Bruno API collections. Use when building API requests, test suites, environments, or working with .bru files in api_tools/. Bruno is a Git-native, offline-first API client (Postman alternative).
+description: "CB - Create and manage Bruno API collections. Use when building API requests, test suites, environments, or working with .bru files in api_tools/. Bruno is a Git-native, offline-first API client (Postman alternative)."
 ---
 
 # API Tools (Bruno)

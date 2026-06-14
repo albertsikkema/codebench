@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: Post-implementation cleanup — rationalize docs, capture learnings, update project state
+description: "CB - Post-implementation cleanup — rationalize docs, capture learnings, update project state"
 user-invocable: true
 ---
 

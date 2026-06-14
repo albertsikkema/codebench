@@ -1,6 +1,6 @@
 ---
 name: setup-release
-description: Set up changelog generation and release workflow for any project. Creates a shell script for changelog/release orchestration, GitHub Actions release workflow, and Makefile targets. Supports protected main branches via PR-based flow.
+description: "CB - Set up changelog generation and release workflow for any project. Creates a shell script for changelog/release orchestration, GitHub Actions release workflow, and Makefile targets. Supports protected main branches via PR-based flow."
 disable-model-invocation: true
 ---
 
