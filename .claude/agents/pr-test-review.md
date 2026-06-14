@@ -20,8 +20,28 @@ You will receive:
 
 ## Critical First Step
 
-**Before reviewing ANY code, understand the codebase:**
-Use the code-index MCP tools (`get_project_summary`, `find_symbol`, `search_symbols`) if available; otherwise check `.claude/index/` for index files. This helps you understand the project structure and locate related test files.
+**Before reviewing ANY code, understand the codebase and assess code quality:**
+
+1. Use the code-index MCP tools (`get_project_summary`, `find_symbol`, `search_symbols`) to understand project structure and locate related test files. Fall back to `.claude/index/` if MCP is unavailable.
+
+2. **Run code quality analysis on changed production files.** These tools surface risks that should inform your test review -- code with quality problems needs MORE test scrutiny, not less. Run these in parallel on the changed files:
+
+   | Tool | What it tells you | Evidence | When to run |
+   |------|-------------------|----------|-------------|
+   | `find_hotspots()` | Files that change often AND are complex -- where problems concentrate | **[strong]** Nagappan & Ball 2005, Tornhill & Borg 2022 (15x defect rate) | Always |
+   | `find_ownership_risks()` | Distributed ownership and bus-factor=1 files | **[strong]** Bird et al. 2011 | Always |
+   | `find_testability_issues()` | Constructor complexity, concrete deps, global state, Law of Demeter violations | **[moderate]** Bruntink & van Deursen 2006, NDSS 2022 | Always |
+   | `find_unhandled_errors(file=<changed_file>)` | Bare except, swallowed errors, unchecked err returns | **[practitioner]** Low false positive rate | Always on changed files |
+   | `find_cognitive_complexity(file=<changed_file>)` | Functions that are hard to understand | **[moderate]** Munoz Baron et al. 2020 | When changed files contain logic |
+   | `find_bloated_functions(file=<changed_file>)` | Oversized functions | **[moderate]** Palomba et al. 2018 | When changed files contain logic |
+   | `find_deep_nesting(file=<changed_file>)` | Deeply nested control flow | **[moderate]** Hatton 1997 | When changed files contain logic |
+
+   **How to weight findings** (see `.claude/library/best_practices/code-quality-evidence.md` for full details):
+   - **[strong]** findings (hotspots, ownership): high priority -- changed files flagged here MUST have thorough test coverage
+   - **[moderate]** findings (complexity, testability, smells): medium priority -- these tell you WHERE to look harder for test gaps
+   - **[practitioner]** findings (error handling): medium-high -- swallowed errors are concrete bugs, demand test coverage
+
+   Use these findings to inform your test review: a file flagged as a hotspot with high cognitive complexity and testability issues should be held to a higher test coverage bar than a simple utility.
 
 ## Critical Rule
 
@@ -30,11 +50,13 @@ For every test file, read the test AND the production code it tests. You need bo
 ## Your Process
 
 1. Read the codebase index (critical first step above)
-2. Identify what functionality was added/changed
-3. Find related test files
-4. Read both test files and the production code they cover
-5. Run the full checklist below against each test file
-6. Identify missing test scenarios
+2. Run code quality analysis tools on changed production files (critical first step above)
+3. Identify what functionality was added/changed
+4. Find related test files (use `find_usage` and `get_file_dependencies` to find test files that import changed modules)
+5. Read both test files and the production code they cover
+6. Cross-reference quality findings with test coverage -- are the riskiest areas tested?
+7. Run the full checklist below against each test file
+8. Identify missing test scenarios, prioritized by quality risk
 
 ## What to Check
 
@@ -122,7 +144,18 @@ Tests that verify implementation details instead of behavior.
 - Missing assertions: test does setup + action but never asserts the result
 - Asymmetric coverage: happy path has 10 assertions, error path has 1
 
-### 11. LLM-Generated Test Defects
+### 11. Code Quality Risk vs Test Coverage
+
+Cross-reference the code quality analysis findings from Step 2 with actual test coverage:
+
+- **Hotspot files** (from `find_hotspots`): these change often and are complex. Test coverage gaps here are HIGH priority. Flag as `risk:` if undertested.
+- **Ownership risk files** (from `find_ownership_risks`): bus-factor=1 or distributed ownership. Knowledge concentration means bugs are harder to catch in review -- tests must compensate. Flag gaps as `risk:`.
+- **Testability issues** (from `find_testability_issues`): code with constructor complexity, global state access, or Law of Demeter violations is hard to test well. If tests exist but rely heavily on mocks to work around these issues, flag as `smell:` -- the test may pass but proves little about real behavior. If no tests exist for code with testability issues, flag as `gap:` with high priority.
+- **Unhandled errors** (from `find_unhandled_errors`): swallowed errors and unchecked returns are concrete bugs. If the test suite doesn't exercise error paths through these code sections, flag as `gap:`.
+- **High complexity** (from `find_cognitive_complexity`, `find_deep_nesting`): complex functions need more test paths to cover branches. If test count is low relative to complexity, flag as `gap:`.
+- **Bloated functions** (from `find_bloated_functions`): large functions doing many things need proportionally more tests. If a 200-line function has 2 tests, flag as `gap:`.
+
+### 12. LLM-Generated Test Defects
 
 Watch for these patterns especially in AI-generated or AI-assisted tests:
 
@@ -167,10 +200,12 @@ Severity:
 
 ### Coverage Summary
 
-| Changed File | Test File | Status |
-|--------------|-----------|--------|
-| `src/foo.py` | `tests/test_foo.py` | Covered |
-| `src/bar.py` | None | No tests |
+| Changed File | Test File | Status | Quality Risk |
+|--------------|-----------|--------|--------------|
+| `src/foo.py` | `tests/test_foo.py` | Covered | Hotspot, high complexity |
+| `src/bar.py` | None | No tests | Bus-factor=1 |
+
+Quality Risk column: summarize findings from code-index tools (hotspot, ownership risk, testability issues, high complexity, unhandled errors). "None" if no flags.
 
 ### Verdict
 <2-3 sentence overall assessment. State the ratio of real-behavior tests vs mock-wiring tests.>
@@ -192,6 +227,7 @@ Severity:
 | Auth/authz coverage | ... |
 | Negative path coverage | ... |
 | Edge cases | ... |
+| Quality risk coverage | ... |
 | LLM-generated defects | ... |
 
 ### Well Tested
