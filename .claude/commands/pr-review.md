@@ -257,7 +257,29 @@ prompt: |
 
 ## Step 4: Consolidate Findings
 
-Combine the agent outputs into a unified report:
+Read ALL agent outputs. Then write a single consolidated review. Two parts: the visible review (terse, actionable) and collapsed agent reports (verbose, reference).
+
+### Writing the visible review
+
+Rules:
+- **One line per finding.** Format: `<file>:L<line>: <problem>. <fix>. [agent]`
+- **Flat lists, no per-agent subsections.** Group by severity, not by which agent found it.
+- **Only findings from the diff.** Do not include suggestions about unchanged code, hypothetical improvements, or "things to consider."
+- **No empty sections.** If a severity level has zero findings, omit it entirely.
+- **No summary counts**, no "X critical, Y high" tallies. The list IS the summary.
+- **No "Well Done" section.** The absence of findings is the compliment.
+- **Deduplicate.** If two agents flag the same line, merge into one finding. Pick the higher severity.
+- **Severity is yours to assign.** Agents suggest severity, but you decide based on the full picture. An agent marking something "critical" doesn't make it critical -- use judgment.
+
+Severity prefixes:
+- `crit:` -- will cause incidents or security breach. Blocks merge.
+- `bug:` -- broken behavior, wrong output.
+- `risk:` -- works now but fragile (race, null, swallowed error, missing validation).
+- `low:` -- style, naming, minor pattern deviation. Author can ignore.
+
+If a fix needs a code snippet, put it on the next line indented. Keep it short.
+
+### Template
 
 ```markdown
 # PR Review: #{number} - {title}
@@ -265,97 +287,54 @@ Combine the agent outputs into a unified report:
 **Author**: {author}
 **Branch**: {head} -> {base}
 **Files Changed**: {count}
-**Agents**: {list core + selected specialized agents, e.g. "Code Quality, Security, Best Practices, Test Coverage + Privacy, Compliance, Error Handling"}
+**Agents**: {list core + selected specialized agents, e.g. "Code Quality, Security, Best Practices, Test Review + Privacy, Compliance, Breaking Changes, Error Handling, Data Integrity, Observability"}
+
+**Recommendation**: Approve | Request Changes
+
+## Must Fix
+
+- `path/file.go:42`: crit: user input passed to exec unsanitized. Use shlex.quote(). [security]
+- `path/handler.py:118`: bug: nil pointer -- `resp` can be nil when status != 200. Add guard. [code-quality]
+
+## Should Fix
+
+- `path/service.ts:67`: risk: await without try/catch, unhandled rejection will crash. Wrap or add .catch(). [error-handling]
+
+## Low
+
+- `path/utils.py:12`: low: shadow builtin `id`. Rename to `item_id`. [code-quality]
 
 ---
-
-## Summary
-
-[2-3 sentence overall assessment based on all agent findings]
-
-**Recommendation**: [Approve / Request Changes / Comment]
-
----
-
-## Critical Issues (MUST FIX)
-
-[Combine CRITICAL findings from all agents that ran - these block merge]
-
-### From Code Quality Review
-[Critical issues from pr-code-quality agent]
-
-### From Security Review
-[Critical vulnerabilities from pr-security agent]
-
-[Include additional "From X Review" subsections only for specialized agents that ran and reported critical issues]
-
----
-
-## High Priority Issues
-
-### Code Quality
-[High severity code issues]
-
-### Security
-[High severity security issues]
-
-### Best Practices
-[Pattern violations]
-
-### Test Review
-[Missing critical tests, rotten green tests, mock abuse]
-
-[Include additional subsections only for specialized agents that ran and reported high-priority issues]
-
----
-
-## Medium/Low Priority
-
-### Improvements
-[Non-blocking suggestions from all agents that ran]
-
-### Test Suggestions
-[Nice-to-have test additions, test smell fixes]
-
----
-
-## Well Done
-
-[Positive findings from agents - acknowledge good work]
-
----
-
-## Agent Reports
 
 <details>
-<summary>Full Code Quality Report</summary>
+<summary>Code Quality Report</summary>
 
-[Paste full output from pr-code-quality agent]
+[Full agent output]
 
 </details>
 
 <details>
-<summary>Full Security Report</summary>
+<summary>Security Report</summary>
 
-[Paste full output from pr-security agent]
-
-</details>
-
-<details>
-<summary>Full Best Practices Report</summary>
-
-[Paste full output from pr-best-practices agent]
+[Full agent output]
 
 </details>
 
-<details>
-<summary>Full Test Review Report</summary>
+[Additional <details> blocks for each agent that ran]
+```
 
-[Paste full output from pr-test-review agent]
+If the review is clean (no findings), write:
 
-</details>
+```markdown
+# PR Review: #{number} - {title}
 
-[Include additional <details> blocks only for specialized agents that ran]
+**Recommendation**: Approve
+
+No issues found.
+
+---
+
+[collapsed agent reports]
 ```
 
 ## Step 5: Save and Post Review
@@ -396,9 +375,8 @@ gh pr review {number} --request-changes --body "Changes requested — see commen
 ## Remember
 
 - **4 core agents always run** — code quality, security, best practices, test coverage
-- **Triage specialized agents** — use the decision table in Step 2 to select which of the 6 specialized agents to include; when in doubt, include them
+- **Triage specialized agents** — use the decision table in Step 2; when in doubt, include them
 - **Launch all selected agents in ONE message** (parallel, not sequential)
 - **Each agent has narrow focus** — don't ask them to do other agents' work
-- **Consolidate thoughtfully** — prioritize by severity across all findings; only include sections for agents that ran
-- **Acknowledge good work** — don't only report problems
+- **Noise kills reviews** — one actionable line beats a paragraph of context. No filler, no empty sections, no suggestions about code outside the diff
 - **Be interactive** — engage with user after presenting report
