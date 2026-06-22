@@ -58,6 +58,20 @@ Use code-index MCP tools:
 - `find_dead_code()` -- unreferenced symbols
 - `find_temporal_coupling()` -- hidden co-change dependencies
 
+Also collect the Codebase Profile metrics from the code-index tools:
+- `get_project_summary()` -- total files, symbols, languages, LOC
+- `find_hotspots()` -- commits, repo age, activity pattern
+- `find_ownership_risks()` -- contributors, bus factor
+
+For each section, record not just the raw data but the interpretation:
+- Hotspots: concentration risk, expected defect rate vs baseline
+- Bloated/complexity: totals out of total analyzed (e.g. "88 of 962")
+- Duplicates: group by pattern (modal handlers, getters, etc.)
+- Nesting: count functions exceeding depth 3, note worst depth
+- Architecture: note module system (ES modules, script tags, none),
+  explain zero-coupling or zero-temporal-coupling when it's a monolith
+  side effect rather than good design
+
 Record all numbers. These feed the Structural Analysis section.
 
 ### Phase 2: Automated audits (run in parallel)

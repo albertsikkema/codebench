@@ -104,21 +104,39 @@ Example: `SEC-C1`, `SEC-C2`, `SEC-H1`, `RES-M3`, `DOC-L2`
 
 ## 3. Structural Analysis
 
+### Codebase Profile
+
+| Metric | Value |
+|--------|-------|
+| Total files (source) | |
+| Total symbols | |
+| Languages | |
+| Total LOC | |
+| Contributors | |
+| Commits | |
+| Repo age | {days} ({created date}; activity summary) |
+| Test files | |
+| Test coverage | |
+
 ### Hotspot Files
 
 | Risk | File | Changes | Complexity |
 |------|------|---------|------------|
 | | | | |
 
+{interpretation -- e.g. concentration risk, expected defect rate vs baseline}
+
 ### Bus Factor
 
-{ownership risk summary}
+{bus factor per file or area, single contributor warnings}
 
-### Top Bloated Functions
+### Top Bloated Functions (5+ signals)
 
 | Function | File:Line | LOC | Vars | Calls | Branches | Nesting |
 |----------|-----------|-----|------|-------|----------|---------|
 | | | | | | | |
+
+{N total bloated functions out of M analyzed}
 
 ### Top Cognitive Complexity
 
@@ -126,15 +144,25 @@ Example: `SEC-C1`, `SEC-C2`, `SEC-H1`, `RES-M3`, `DOC-L2`
 |----------|------------|-----------|
 | | | |
 
+{N functions exceed threshold 10. M exceed threshold 15.}
+
 ### Duplicates
 
-{count and primary clusters}
+{count of duplicate pairs, then primary clusters grouped by pattern:}
+- {N identical X functions}
+- {N identical Y handlers}
+- {consolidation opportunity summary}
+
+### Nesting
+
+{N functions with nesting depth >3 (worst: depth N)}
 
 ### Architecture Metrics
 
 - Circular dependencies: {count or "none"}
-- Coupling: {summary}
-- Temporal coupling: {summary}
+- Coupling: {summary -- Ca/Ce metrics or "zero coupling" with explanation}
+- Module system: {ES modules / CommonJS / script tags / none}
+- Temporal coupling: {summary or "none detected" with explanation}
 - Dead code: {summary}
 
 ---
