@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -181,6 +182,35 @@ func findProjectRoot() string {
 		check = parent
 	}
 	return cwd
+}
+
+// projectName derives the project name from the git remote origin URL,
+// falling back to the directory basename.
+func projectName(rootDir string) string {
+	cmd := exec.Command("git", "-C", rootDir, "config", "--get", "remote.origin.url")
+	out, err := cmd.Output()
+	if err == nil {
+		url := strings.TrimSpace(string(out))
+		// Handle both SSH (git@...:user/repo.git) and HTTPS (.../user/repo.git)
+		if idx := strings.LastIndex(url, "/"); idx >= 0 {
+			name := url[idx+1:]
+			name = strings.TrimSuffix(name, ".git")
+			if name != "" {
+				return name
+			}
+		}
+		if idx := strings.LastIndex(url, ":"); idx >= 0 {
+			name := url[idx+1:]
+			name = strings.TrimSuffix(name, ".git")
+			if slash := strings.LastIndex(name, "/"); slash >= 0 {
+				name = name[slash+1:]
+			}
+			if name != "" {
+				return name
+			}
+		}
+	}
+	return filepath.Base(rootDir)
 }
 
 // relPath returns a clean relative path for display. Strips any leading ../
@@ -381,7 +411,7 @@ func buildHealthTree(data *IndexData, rootDir string) *TreeNode {
 	graph := buildFileGraph(data, rootDir, 0)
 
 	// Build a tree from flat file list, grouped by directory
-	root := &TreeNode{Name: filepath.Base(rootDir)}
+	root := &TreeNode{Name: projectName(rootDir)}
 	dirNodes := map[string]*TreeNode{"": root}
 
 	// Ensure parent dirs exist
@@ -450,6 +480,7 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 
 	var nodes []GraphNode
 	nodeIDs := make(map[string]bool)
+	absToRel := make(map[string]string) // absolute qid -> relative qid for display
 	for _, sym := range data.Symbols {
 		if sym.Kind == "variable" || sym.Kind == "constant" {
 			continue
@@ -460,8 +491,10 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 			continue
 		}
 		rel := relPath(rootDir, sym.FilePath)
+		relQID := rel + "::" + sym.QualifiedName
+		absToRel[qid] = relQID
 		nodes = append(nodes, GraphNode{
-			ID:       qid,
+			ID:       relQID,
 			Label:    sym.Name,
 			File:     rel,
 			Kind:     sym.Kind,
@@ -487,7 +520,7 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 				continue
 			}
 			seen[key] = true
-			edges = append(edges, GraphEdge{Source: edge.CallerScope, Target: targetQID, Type: "calls"})
+			edges = append(edges, GraphEdge{Source: absToRel[edge.CallerScope], Target: absToRel[targetQID], Type: "calls"})
 		}
 	}
 
