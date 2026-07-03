@@ -60,3 +60,4 @@ examples/
 .claude/index-cache
 .claude/memories
 .claude/logs
+.claude/helpers/codebase-graph/codebase-graph.html

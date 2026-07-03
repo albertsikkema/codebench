@@ -3,13 +3,17 @@
 // Usage:
 //
 //	go run .claude/helpers/codebase-graph/main.go [options]
-//	  -view file|symbol   Graph view (default: file)
-//	  -output PATH        Output HTML file (default: codebase-graph.html)
-//	  -cache PATH         Index cache file (default: .claude/index-cache/index.json)
-//	  -min-refs N         Only include nodes with >= N references (default: 0)
+//	  -output PATH   Output HTML file (default: .claude/helpers/codebase-graph/codebase-graph.html)
+//	  -cache PATH    Index cache file (default: .claude/index-cache/index.json)
+//
+// Generates a single HTML with three switchable views:
+//   - File graph:   Force-directed file dependency graph, colored by language or health
+//   - Symbol graph: Force-directed symbol call graph, grouped by file
+//   - Health map:   D3 circle-packing diagram showing file health (green=healthy, red=hot)
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -20,6 +24,12 @@ import (
 	"strings"
 )
 
+//go:embed style.css
+var embeddedCSS string
+
+//go:embed graph.js
+var embeddedJS string
+
 // --- Index data structures (mirror the MCP server's on-disk format) ---
 
 type Symbol struct {
@@ -28,6 +38,7 @@ type Symbol struct {
 	Kind          string   `json:"kind"`
 	FilePath      string   `json:"file_path"`
 	Line          int      `json:"line"`
+	EndLine       int      `json:"end_line"`
 	Language      string   `json:"language"`
 	Signature     string   `json:"signature,omitempty"`
 	Exported      bool     `json:"exported"`
@@ -64,19 +75,24 @@ type IndexData struct {
 // --- Graph structures ---
 
 type GraphNode struct {
-	ID       string `json:"id"`
-	Label    string `json:"label"`
-	File     string `json:"file,omitempty"`
-	Kind     string `json:"kind"`
-	Language string `json:"language,omitempty"`
-	Refs     int    `json:"refs"`
-	Symbols  int    `json:"symbols,omitempty"`
+	ID       string  `json:"id"`
+	Label    string  `json:"label"`
+	File     string  `json:"file,omitempty"`
+	Kind     string  `json:"kind"`
+	Language string  `json:"language,omitempty"`
+	Refs     int     `json:"refs"`
+	Symbols  int     `json:"symbols,omitempty"`
+	Health   float64 `json:"health"` // 0.0 (healthy) to 1.0 (hot)
+	InRefs   int     `json:"inRefs"`
+	OutRefs  int     `json:"outRefs"`
+	Lines    int     `json:"lines,omitempty"`
 }
 
 type GraphEdge struct {
 	Source string `json:"source"`
 	Target string `json:"target"`
 	Type   string `json:"type"`
+	Weight int    `json:"weight,omitempty"` // number of cross-references between the pair
 }
 
 type GraphData struct {
@@ -85,27 +101,39 @@ type GraphData struct {
 	View  string      `json:"view"`
 }
 
+// TreeNode is for circle-packing / treemap views.
+type TreeNode struct {
+	Name     string      `json:"name"`
+	Children []*TreeNode `json:"children,omitempty"`
+	Value    int         `json:"value,omitempty"`    // leaf size (symbol count)
+	Health   float64     `json:"health"`             // 0-1
+	Language string      `json:"language,omitempty"` // leaf only
+	File     string      `json:"file,omitempty"`     // leaf only (relative path)
+	Lines    int         `json:"lines,omitempty"`
+	InRefs   int         `json:"inRefs,omitempty"`
+	OutRefs  int         `json:"outRefs,omitempty"`
+	Symbols  int         `json:"symbols,omitempty"`
+}
+
+// AllData holds all three views for embedding in a single HTML file.
+type AllData struct {
+	FileGraph   GraphData `json:"fileGraph"`
+	SymbolGraph GraphData `json:"symbolGraph"`
+	HealthTree  *TreeNode `json:"healthTree"`
+}
+
 func main() {
-	view := flag.String("view", "file", "Graph view: file (dependencies) or symbol (call graph)")
-	output := flag.String("output", "codebase-graph.html", "Output HTML file")
+	output := flag.String("output", ".claude/helpers/codebase-graph/codebase-graph.html", "Output HTML file")
 	cachePath := flag.String("cache", ".claude/index-cache/index.json", "Index cache file")
-	minRefs := flag.Int("min-refs", 0, "Only include nodes with >= N references")
 	flag.Parse()
 
-	if *view != "file" && *view != "symbol" {
-		log.Fatal("view must be 'file' or 'symbol'")
-	}
-
-	// Find project root
 	root := findProjectRoot()
 
-	// Resolve cache path
 	cache := *cachePath
 	if !filepath.IsAbs(cache) {
 		cache = filepath.Join(root, cache)
 	}
 
-	// Load index
 	data, err := loadIndex(cache)
 	if err != nil {
 		log.Fatalf("Failed to load index from %s: %v", cache, err)
@@ -115,27 +143,28 @@ func main() {
 		log.Fatal("Index is empty. Make sure the MCP code-index server has run at least once.")
 	}
 
-	// Build graph
-	var graph GraphData
-	switch *view {
-	case "symbol":
-		graph = buildSymbolGraph(data, root, *minRefs)
-	default:
-		graph = buildFileGraph(data, root, *minRefs)
-	}
-
-	// Resolve output path
 	out := *output
 	if !filepath.IsAbs(out) {
 		out = filepath.Join(root, out)
 	}
 
-	// Write HTML
-	if err := writeHTML(graph, out); err != nil {
+	all := AllData{
+		FileGraph:   buildFileGraph(data, root, 0),
+		SymbolGraph: buildSymbolGraph(data, root, 0),
+		HealthTree:  buildHealthTree(data, root),
+	}
+
+	allJSON, err := json.Marshal(all)
+	if err != nil {
+		log.Fatalf("Failed to marshal data: %v", err)
+	}
+
+	if err := writeCombinedHTML(allJSON, out); err != nil {
 		log.Fatalf("Failed to write HTML: %v", err)
 	}
 
-	fmt.Printf("Generated %s view: %s (%d nodes, %d edges)\n", *view, out, len(graph.Nodes), len(graph.Edges))
+	fmt.Printf("Generated: %s (%d files, %d symbols, %d edges)\n",
+		out, len(all.FileGraph.Nodes), len(all.SymbolGraph.Nodes), len(all.SymbolGraph.Edges))
 }
 
 func findProjectRoot() string {
@@ -152,6 +181,27 @@ func findProjectRoot() string {
 		check = parent
 	}
 	return cwd
+}
+
+// relPath returns a clean relative path for display. Strips any leading ../
+// chains so paths are always relative-looking, even when the index was built
+// from a different root directory.
+func relPath(rootDir, absPath string) string {
+	rel, err := filepath.Rel(rootDir, absPath)
+	if err != nil {
+		rel = absPath
+	}
+	// Strip leading ../
+	for strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		rel = rel[3:]
+	}
+	if rel == ".." {
+		return filepath.Base(absPath)
+	}
+	if rel == "" {
+		return filepath.Base(absPath)
+	}
+	return rel
 }
 
 func loadIndex(path string) (*IndexData, error) {
@@ -175,9 +225,9 @@ func buildFileGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		fileSymbols[sym.FilePath] = append(fileSymbols[sym.FilePath], sym)
 	}
 
-	// Count refs per file: number of unique files that call into this file's symbols
-	fileRefs := make(map[string]int)
-	callersBySymbol := make(map[string]map[string]bool) // callee_name -> set of caller files
+	// Count inbound refs per file (unique caller files)
+	fileInRefs := make(map[string]int)
+	callersBySymbol := make(map[string]map[string]bool)
 	for _, edge := range data.CallEdges {
 		if callersBySymbol[edge.CalleeName] == nil {
 			callersBySymbol[edge.CalleeName] = make(map[string]bool)
@@ -188,16 +238,41 @@ func buildFileGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		callers := callersBySymbol[sym.Name]
 		for callerFile := range callers {
 			if callerFile != sym.FilePath {
-				fileRefs[sym.FilePath]++
+				fileInRefs[sym.FilePath]++
 			}
+		}
+	}
+
+	// Count outbound refs per file (unique callee files)
+	fileOutRefs := make(map[string]int)
+	calleesByFile := make(map[string]map[string]bool)
+	for _, edge := range data.CallEdges {
+		for _, sym := range data.Symbols {
+			if sym.Name == edge.CalleeName && sym.FilePath != edge.CallerFile {
+				if calleesByFile[edge.CallerFile] == nil {
+					calleesByFile[edge.CallerFile] = make(map[string]bool)
+				}
+				calleesByFile[edge.CallerFile][sym.FilePath] = true
+			}
+		}
+	}
+	for file, callees := range calleesByFile {
+		fileOutRefs[file] = len(callees)
+	}
+
+	// Estimate lines per file from symbol byte offsets
+	fileLines := make(map[string]int)
+	for _, sym := range data.Symbols {
+		if sym.EndLine > fileLines[sym.FilePath] {
+			fileLines[sym.FilePath] = sym.EndLine
 		}
 	}
 
 	var nodes []GraphNode
 	nodeIDs := make(map[string]bool)
 	for path, fi := range data.Files {
-		rel, _ := filepath.Rel(rootDir, path)
-		refs := fileRefs[path]
+		rel := relPath(rootDir, path)
+		refs := fileInRefs[path]
 		if refs < minRefs {
 			continue
 		}
@@ -209,31 +284,147 @@ func buildFileGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 			Language: fi.Language,
 			Refs:     refs,
 			Symbols:  len(fileSymbols[path]),
+			InRefs:   fileInRefs[path],
+			OutRefs:  fileOutRefs[path],
+			Lines:    fileLines[path],
 		})
 		nodeIDs[rel] = true
 	}
 
-	var edges []GraphEdge
-	seen := make(map[string]bool)
+	// Compute health scores (normalized 0-1)
+	computeHealthScores(nodes)
+
+	edges := make([]GraphEdge, 0)
+	edgeWeights := make(map[string]int)
 	for _, ie := range data.ImportEdges {
 		if ie.ResolvedFile == "" {
 			continue
 		}
-		srcRel, _ := filepath.Rel(rootDir, ie.ImportingFile)
-		tgtRel, _ := filepath.Rel(rootDir, ie.ResolvedFile)
+		srcRel := relPath(rootDir, ie.ImportingFile)
+		tgtRel := relPath(rootDir, ie.ResolvedFile)
 		if !nodeIDs[srcRel] || !nodeIDs[tgtRel] {
 			continue
 		}
 		key := srcRel + "|" + tgtRel
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		edges = append(edges, GraphEdge{Source: srcRel, Target: tgtRel, Type: "imports"})
+		edgeWeights[key]++
+	}
+	for key, w := range edgeWeights {
+		parts := strings.SplitN(key, "|", 2)
+		edges = append(edges, GraphEdge{Source: parts[0], Target: parts[1], Type: "imports", Weight: w})
 	}
 
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Refs > nodes[j].Refs })
 	return GraphData{Nodes: nodes, Edges: edges, View: "file"}
+}
+
+// computeHealthScores assigns a 0-1 health score using percentile ranking.
+// Combines symbol count, coupling, and file size. Uses rank-based scoring
+// so results spread across the full green-to-red range.
+func computeHealthScores(nodes []GraphNode) {
+	if len(nodes) == 0 {
+		return
+	}
+
+	// Compute raw scores
+	rawScores := make([]float64, len(nodes))
+	var maxSymbols, maxCoupling, maxLines int
+	for i := range nodes {
+		if nodes[i].Symbols > maxSymbols {
+			maxSymbols = nodes[i].Symbols
+		}
+		c := nodes[i].InRefs + nodes[i].OutRefs
+		if c > maxCoupling {
+			maxCoupling = c
+		}
+		if nodes[i].Lines > maxLines {
+			maxLines = nodes[i].Lines
+		}
+	}
+	for i := range nodes {
+		var score float64
+		if maxSymbols > 0 {
+			score += 0.35 * float64(nodes[i].Symbols) / float64(maxSymbols)
+		}
+		if maxCoupling > 0 {
+			score += 0.40 * float64(nodes[i].InRefs+nodes[i].OutRefs) / float64(maxCoupling)
+		}
+		if maxLines > 0 {
+			score += 0.25 * float64(nodes[i].Lines) / float64(maxLines)
+		}
+		rawScores[i] = score
+	}
+
+	// Rank-normalize: convert raw scores to percentile ranks (0-1)
+	// so the spread fills the full color range
+	type indexedScore struct {
+		idx   int
+		score float64
+	}
+	sorted := make([]indexedScore, len(rawScores))
+	for i, s := range rawScores {
+		sorted[i] = indexedScore{i, s}
+	}
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].score < sorted[j].score })
+
+	n := float64(len(sorted))
+	for rank, is := range sorted {
+		if n <= 1 {
+			nodes[is.idx].Health = 0
+		} else {
+			nodes[is.idx].Health = float64(rank) / (n - 1)
+		}
+	}
+}
+
+func buildHealthTree(data *IndexData, rootDir string) *TreeNode {
+	// Reuse file graph logic for health computation
+	graph := buildFileGraph(data, rootDir, 0)
+
+	// Build a tree from flat file list, grouped by directory
+	root := &TreeNode{Name: filepath.Base(rootDir)}
+	dirNodes := map[string]*TreeNode{"": root}
+
+	// Ensure parent dirs exist
+	var ensureDir func(string) *TreeNode
+	ensureDir = func(dir string) *TreeNode {
+		if n, ok := dirNodes[dir]; ok {
+			return n
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir || parent == "." {
+			parent = ""
+		}
+		parentNode := ensureDir(parent)
+		n := &TreeNode{Name: filepath.Base(dir)}
+		parentNode.Children = append(parentNode.Children, n)
+		dirNodes[dir] = n
+		return n
+	}
+
+	for _, node := range graph.Nodes {
+		dir := filepath.Dir(node.File)
+		if dir == "." {
+			dir = ""
+		}
+		parentNode := ensureDir(dir)
+		val := node.Symbols
+		if val < 1 {
+			val = 1
+		}
+		parentNode.Children = append(parentNode.Children, &TreeNode{
+			Name:     filepath.Base(node.File),
+			Value:    val,
+			Health:   node.Health,
+			Language: node.Language,
+			File:     node.File,
+			Lines:    node.Lines,
+			InRefs:   node.InRefs,
+			OutRefs:  node.OutRefs,
+			Symbols:  node.Symbols,
+		})
+	}
+
+	return root
 }
 
 func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
@@ -268,7 +459,7 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		if refs < minRefs {
 			continue
 		}
-		rel, _ := filepath.Rel(rootDir, sym.FilePath)
+		rel := relPath(rootDir, sym.FilePath)
 		nodes = append(nodes, GraphNode{
 			ID:       qid,
 			Label:    sym.Name,
@@ -280,7 +471,7 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		nodeIDs[qid] = true
 	}
 
-	var edges []GraphEdge
+	edges := make([]GraphEdge, 0)
 	seen := make(map[string]bool)
 	for _, edge := range data.CallEdges {
 		if !nodeIDs[edge.CallerScope] {
@@ -300,16 +491,16 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		}
 	}
 
-	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Refs > nodes[j].Refs })
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].File != nodes[j].File {
+			return nodes[i].File < nodes[j].File
+		}
+		return nodes[i].ID < nodes[j].ID
+	})
 	return GraphData{Nodes: nodes, Edges: edges, View: "symbol"}
 }
 
-func writeHTML(graph GraphData, outputFile string) error {
-	graphJSON, err := json.Marshal(graph)
-	if err != nil {
-		return err
-	}
-
+func writeCombinedHTML(allJSON []byte, outputFile string) error {
 	dir := filepath.Dir(outputFile)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
@@ -317,10 +508,23 @@ func writeHTML(graph GraphData, outputFile string) error {
 
 	var buf strings.Builder
 	buf.WriteString(htmlHead)
-	buf.WriteString("\n<script>\nconst GRAPH_DATA = ")
-	buf.Write(graphJSON)
-	buf.WriteString(";\n</script>\n")
+	buf.WriteString("<style>\n")
+	buf.WriteString(embeddedCSS)
+	buf.WriteString("</style>\n</head>\n")
 	buf.WriteString(htmlBody)
+	buf.WriteString("<script>\nconst ALL_DATA = ")
+	buf.Write(allJSON)
+	buf.WriteString(";\n</script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/dagre@0.8.5/dist/dagre.min.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/layout-base@2.0.1/layout-base.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/cose-base@2.2.0/cose-base.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js\"></script>\n")
+	buf.WriteString("<script src=\"https://unpkg.com/d3@7.9.0/dist/d3.min.js\"></script>\n")
+	buf.WriteString("<script>\n")
+	buf.WriteString(embeddedJS)
+	buf.WriteString("\n</script>\n</body>\n</html>")
 
 	return os.WriteFile(outputFile, []byte(buf.String()), 0644)
 }
@@ -331,358 +535,45 @@ const htmlHead = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codebase Graph</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-  #toolbar { display: flex; gap: 8px; padding: 8px 12px; background: #161b22; border-bottom: 1px solid #30363d; align-items: center; flex-shrink: 0; z-index: 10; flex-wrap: wrap; }
-  #toolbar label { font-size: 13px; color: #8b949e; }
-  #toolbar input, #toolbar select, #toolbar button { font-size: 13px; padding: 4px 8px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; }
-  #toolbar button { cursor: pointer; background: #21262d; }
-  #toolbar button:hover { background: #30363d; }
-  #search { width: 200px; }
-  #cy { flex: 1; }
-  #info-panel { position: fixed; right: 12px; top: 56px; width: 300px; max-height: calc(100vh - 68px); overflow-y: auto; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; display: none; z-index: 20; font-size: 13px; }
-  #info-panel h3 { font-size: 15px; margin-bottom: 8px; color: #58a6ff; word-break: break-all; }
-  #info-panel .field { margin-bottom: 6px; }
-  #info-panel .field-label { color: #8b949e; }
-  #info-panel .connections { margin-top: 10px; }
-  #info-panel .connections ul { list-style: none; padding: 0; }
-  #info-panel .connections li { margin: 2px 0; cursor: pointer; color: #58a6ff; }
-  #info-panel .connections li:hover { text-decoration: underline; }
-  #info-panel .close-btn { position: absolute; top: 8px; right: 12px; cursor: pointer; color: #8b949e; font-size: 18px; }
-  #info-panel .close-btn:hover { color: #c9d1d9; }
-  #legend { position: fixed; left: 12px; bottom: 12px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; font-size: 12px; z-index: 10; }
-  #legend .item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
-  #legend .dot { width: 10px; height: 10px; border-radius: 50%; }
-  #stats { position: fixed; left: 12px; top: 56px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; font-size: 12px; z-index: 10; color: #8b949e; }
-</style>
-</head>`
+`
 
 const htmlBody = `<body>
 <div id="toolbar">
-  <input id="search" type="text" placeholder="Search nodes...">
-  <label>Layout:</label>
-  <select id="layout-select">
-    <option value="cose-bilkent">Force (cose-bilkent)</option>
-    <option value="dagre">Hierarchical (dagre)</option>
-    <option value="circle">Circle</option>
-    <option value="concentric">Concentric</option>
-    <option value="grid">Grid</option>
+  <label>View:</label>
+  <select id="view-select">
+    <option value="file">File graph</option>
+    <option value="symbol">Symbol graph</option>
+    <option value="health">Health map</option>
   </select>
-  <label>Min refs:</label>
-  <input id="min-refs" type="number" value="0" min="0" style="width:60px">
-  <button id="btn-fit">Fit</button>
-  <button id="btn-reset">Reset</button>
+  <div class="sep"></div>
+  <div class="graph-controls">
+    <input id="search" type="text" placeholder="Search nodes...">
+    <label>Layout:</label>
+    <select id="layout-select">
+      <option value="cose-bilkent">Force (cose-bilkent)</option>
+      <option value="dagre">Hierarchical (dagre)</option>
+      <option value="circle">Circle</option>
+      <option value="concentric">Concentric</option>
+      <option value="grid">Grid</option>
+    </select>
+    <label>Min refs:</label>
+    <input id="min-refs" type="number" value="0" min="0" style="width:60px">
+    <label>Color:</label>
+    <select id="color-mode"></select>
+    <button id="btn-fit">Fit</button>
+    <button id="btn-reset">Reset</button>
+  </div>
+  <div class="health-controls">
+    <div id="breadcrumb"><span id="root-link">root</span></div>
+    <button id="btn-zoom-out">Zoom out</button>
+  </div>
 </div>
-<div id="cy"></div>
+<div id="canvas"></div>
 <div id="info-panel">
   <span class="close-btn" id="close-info">&times;</span>
   <div id="info-content"></div>
 </div>
+<div id="tooltip"></div>
 <div id="stats"></div>
 <div id="legend"></div>
-
-<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
-<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
-<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
-<script src="https://unpkg.com/layout-base@2.0.1/layout-base.js"></script>
-<script src="https://unpkg.com/cose-base@2.2.0/cose-base.js"></script>
-<script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
-<script>
-(function() {
-  const data = GRAPH_DATA;
-  const isFileView = data.view === 'file';
-
-  const COLORS = {
-    file: '#58a6ff',
-    function: '#7ee787',
-    method: '#d2a8ff',
-    class: '#ff7b72',
-    struct: '#ffa657',
-    interface: '#79c0ff',
-    type_alias: '#a5d6ff',
-    enum: '#f2cc60',
-    model: '#ff9bce',
-    component: '#b392f0',
-    module: '#8b949e',
-  };
-
-  const LANG_COLORS = {
-    python: '#3572A5',
-    javascript: '#f1e05a',
-    typescript: '#3178c6',
-    go: '#00ADD8',
-    rust: '#dea584',
-    c: '#555555',
-    cpp: '#f34b7d',
-  };
-
-  // Build cytoscape elements
-  const nodeSet = new Set(data.nodes.map(n => n.id));
-  const elements = [];
-
-  if (isFileView) {
-    // Group by directory
-    const dirs = new Set();
-    data.nodes.forEach(n => {
-      const dir = n.file.includes('/') ? n.file.substring(0, n.file.lastIndexOf('/')) : '.';
-      dirs.add(dir);
-    });
-    dirs.forEach(dir => {
-      elements.push({ data: { id: 'dir:' + dir, label: dir, kind: 'directory' }, classes: 'compound' });
-    });
-    data.nodes.forEach(n => {
-      const dir = n.file.includes('/') ? n.file.substring(0, n.file.lastIndexOf('/')) : '.';
-      elements.push({
-        data: {
-          id: n.id, label: n.label, kind: n.kind, language: n.language,
-          refs: n.refs, symbols: n.symbols, file: n.file, parent: 'dir:' + dir
-        }
-      });
-    });
-  } else {
-    // Symbol view — group by file
-    const files = new Set(data.nodes.map(n => n.file));
-    files.forEach(f => {
-      elements.push({ data: { id: 'file:' + f, label: f, kind: 'file-group' }, classes: 'compound' });
-    });
-    data.nodes.forEach(n => {
-      elements.push({
-        data: {
-          id: n.id, label: n.label, kind: n.kind, language: n.language,
-          refs: n.refs, file: n.file, parent: 'file:' + n.file
-        }
-      });
-    });
-  }
-
-  data.edges.forEach(e => {
-    if (nodeSet.has(e.source) && nodeSet.has(e.target)) {
-      elements.push({ data: { source: e.source, target: e.target, type: e.type } });
-    }
-  });
-
-  const cy = cytoscape({
-    container: document.getElementById('cy'),
-    elements: elements,
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'label': 'data(label)',
-          'font-size': 10,
-          'color': '#c9d1d9',
-          'text-valign': 'bottom',
-          'text-margin-y': 4,
-          'width': function(ele) { return Math.max(16, Math.min(60, 16 + (ele.data('refs') || 0) * 3)); },
-          'height': function(ele) { return Math.max(16, Math.min(60, 16 + (ele.data('refs') || 0) * 3)); },
-          'background-color': function(ele) {
-            if (isFileView && ele.data('language')) return LANG_COLORS[ele.data('language')] || COLORS[ele.data('kind')] || '#8b949e';
-            return COLORS[ele.data('kind')] || '#8b949e';
-          },
-          'border-width': 1,
-          'border-color': '#30363d',
-          'text-max-width': 80,
-          'text-wrap': 'ellipsis',
-        }
-      },
-      {
-        selector: 'node.compound, node[kind="directory"], node[kind="file-group"]',
-        style: {
-          'background-color': '#161b22',
-          'background-opacity': 0.6,
-          'border-color': '#30363d',
-          'border-width': 1,
-          'label': 'data(label)',
-          'font-size': 11,
-          'color': '#8b949e',
-          'text-valign': 'top',
-          'text-halign': 'center',
-          'text-margin-y': -6,
-          'padding': 12,
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 1,
-          'line-color': '#30363d',
-          'target-arrow-color': '#30363d',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier',
-          'arrow-scale': 0.6,
-          'opacity': 0.5,
-        }
-      },
-      {
-        selector: 'node.highlighted',
-        style: { 'border-color': '#f0e68c', 'border-width': 3, 'z-index': 100 }
-      },
-      {
-        selector: 'node.neighbor',
-        style: { 'border-color': '#58a6ff', 'border-width': 2 }
-      },
-      {
-        selector: 'edge.highlighted',
-        style: { 'line-color': '#58a6ff', 'target-arrow-color': '#58a6ff', 'opacity': 1, 'width': 2, 'z-index': 100 }
-      },
-      {
-        selector: 'node.dimmed',
-        style: { 'opacity': 0.15 }
-      },
-      {
-        selector: 'edge.dimmed',
-        style: { 'opacity': 0.05 }
-      },
-      {
-        selector: 'node.search-match',
-        style: { 'border-color': '#f0e68c', 'border-width': 3, 'z-index': 100 }
-      },
-      {
-        selector: 'node.filtered-out',
-        style: { 'display': 'none' }
-      },
-    ],
-    layout: { name: 'cose-bilkent', animate: false, nodeDimensionsIncludeLabels: true, idealEdgeLength: 120, nodeRepulsion: 8000 },
-    wheelSensitivity: 0.3,
-  });
-
-  // Stats
-  const nonCompound = cy.nodes().filter(n => !n.isParent());
-  document.getElementById('stats').innerHTML =
-    '<strong>' + nonCompound.length + '</strong> nodes &middot; <strong>' + cy.edges().length + '</strong> edges';
-
-  // Legend
-  const kinds = [...new Set(data.nodes.map(n => isFileView ? n.language : n.kind).filter(Boolean))];
-  const colorMap = isFileView ? LANG_COLORS : COLORS;
-  let legendHTML = '';
-  kinds.sort().forEach(k => {
-    legendHTML += '<div class="item"><div class="dot" style="background:' + (colorMap[k] || '#8b949e') + '"></div>' + k + '</div>';
-  });
-  document.getElementById('legend').innerHTML = legendHTML;
-
-  // Click handler
-  cy.on('tap', 'node', function(evt) {
-    const node = evt.target;
-    if (node.isParent()) return;
-
-    cy.elements().removeClass('highlighted neighbor dimmed');
-    cy.elements().not(node).addClass('dimmed');
-
-    node.addClass('highlighted').removeClass('dimmed');
-    const connectedEdges = node.connectedEdges();
-    connectedEdges.addClass('highlighted').removeClass('dimmed');
-    const neighbors = node.neighborhood('node');
-    neighbors.addClass('neighbor').removeClass('dimmed');
-    node.ancestors().removeClass('dimmed');
-    neighbors.ancestors().removeClass('dimmed');
-
-    const d = node.data();
-    let html = '<h3>' + d.label + '</h3>';
-    html += '<div class="field"><span class="field-label">Kind:</span> ' + d.kind + '</div>';
-    if (d.file) html += '<div class="field"><span class="field-label">File:</span> ' + d.file + '</div>';
-    if (d.language) html += '<div class="field"><span class="field-label">Language:</span> ' + d.language + '</div>';
-    html += '<div class="field"><span class="field-label">References:</span> ' + (d.refs || 0) + '</div>';
-    if (d.symbols) html += '<div class="field"><span class="field-label">Symbols:</span> ' + d.symbols + '</div>';
-
-    const incoming = connectedEdges.filter(e => e.target().id() === node.id());
-    const outgoing = connectedEdges.filter(e => e.source().id() === node.id());
-
-    if (incoming.length > 0) {
-      html += '<div class="connections"><strong>Imported by (' + incoming.length + '):</strong><ul>';
-      incoming.forEach(e => {
-        const src = e.source();
-        html += '<li data-id="' + src.id() + '">' + src.data('label') + '</li>';
-      });
-      html += '</ul></div>';
-    }
-    if (outgoing.length > 0) {
-      html += '<div class="connections"><strong>Imports (' + outgoing.length + '):</strong><ul>';
-      outgoing.forEach(e => {
-        const tgt = e.target();
-        html += '<li data-id="' + tgt.id() + '">' + tgt.data('label') + '</li>';
-      });
-      html += '</ul></div>';
-    }
-
-    document.getElementById('info-content').innerHTML = html;
-    document.getElementById('info-panel').style.display = 'block';
-
-    document.querySelectorAll('#info-panel .connections li').forEach(li => {
-      li.addEventListener('click', function() {
-        const targetNode = cy.getElementById(this.dataset.id);
-        if (targetNode.length) {
-          targetNode.emit('tap');
-          cy.animate({ center: { eles: targetNode }, zoom: cy.zoom() }, { duration: 300 });
-        }
-      });
-    });
-  });
-
-  cy.on('tap', function(evt) {
-    if (evt.target === cy) {
-      cy.elements().removeClass('highlighted neighbor dimmed');
-      document.getElementById('info-panel').style.display = 'none';
-    }
-  });
-
-  document.getElementById('close-info').addEventListener('click', function() {
-    document.getElementById('info-panel').style.display = 'none';
-    cy.elements().removeClass('highlighted neighbor dimmed');
-  });
-
-  // Search
-  let searchTimeout;
-  document.getElementById('search').addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    const query = this.value.toLowerCase().trim();
-    searchTimeout = setTimeout(() => {
-      cy.nodes().removeClass('search-match dimmed');
-      cy.edges().removeClass('dimmed');
-      if (!query) return;
-      const matches = cy.nodes().filter(n => !n.isParent() && n.data('label').toLowerCase().includes(query));
-      if (matches.length > 0) {
-        cy.elements().addClass('dimmed');
-        matches.forEach(m => {
-          m.addClass('search-match').removeClass('dimmed');
-          m.ancestors().removeClass('dimmed');
-        });
-      }
-    }, 200);
-  });
-
-  // Min refs filter
-  document.getElementById('min-refs').addEventListener('change', function() {
-    const minRefs = parseInt(this.value) || 0;
-    cy.nodes().forEach(n => {
-      if (n.isParent()) return;
-      if ((n.data('refs') || 0) < minRefs) {
-        n.addClass('filtered-out');
-      } else {
-        n.removeClass('filtered-out');
-      }
-    });
-  });
-
-  // Layout selector
-  document.getElementById('layout-select').addEventListener('change', function() {
-    const name = this.value;
-    const opts = { name: name, animate: true, animationDuration: 500, nodeDimensionsIncludeLabels: true };
-    if (name === 'cose-bilkent') { opts.idealEdgeLength = 120; opts.nodeRepulsion = 8000; opts.animate = false; }
-    if (name === 'dagre') { opts.rankDir = 'TB'; opts.spacingFactor = 1.2; }
-    if (name === 'concentric') { opts.concentric = function(n) { return n.data('refs') || 0; }; opts.levelWidth = function() { return 3; }; }
-    cy.layout(opts).run();
-  });
-
-  document.getElementById('btn-fit').addEventListener('click', () => cy.fit(null, 30));
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    cy.elements().removeClass('highlighted neighbor dimmed search-match filtered-out');
-    document.getElementById('search').value = '';
-    document.getElementById('min-refs').value = '0';
-    document.getElementById('info-panel').style.display = 'none';
-    cy.fit(null, 30);
-  });
-})();
-</script>
-</body>
-</html>`
+`
