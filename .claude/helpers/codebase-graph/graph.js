@@ -60,6 +60,9 @@
     var isFileView = viewName === 'file';
     var colorMode = isFileView ? 'health' : 'language';
 
+    var layoutSelect = document.getElementById('layout-select');
+    layoutSelect.value = isFileView ? 'cose-bilkent' : 'dagre';
+
     var colorSelect = document.getElementById('color-mode');
     colorSelect.innerHTML = '';
     ['health', 'coupling', 'language'].forEach(function(v) {
@@ -90,9 +93,21 @@
         }});
       });
     } else {
+      // Flat directory grouping (dir -> file -> symbol) to follow repo structure
+      // without deep nesting that kills cose-bilkent performance
+      var dirs = new Set();
       var files = new Set(data.nodes.map(function(n) { return n.file; }));
       files.forEach(function(f) {
-        elements.push({ data: { id: 'file:' + f, label: f, kind: 'file-group' }, classes: 'compound' });
+        var dir = f.indexOf('/') >= 0 ? f.substring(0, f.lastIndexOf('/')) : '.';
+        dirs.add(dir);
+      });
+      dirs.forEach(function(dir) {
+        elements.push({ data: { id: 'dir:' + dir, label: dir, kind: 'directory' }, classes: 'compound' });
+      });
+      files.forEach(function(f) {
+        var dir = f.indexOf('/') >= 0 ? f.substring(0, f.lastIndexOf('/')) : '.';
+        var fname = f.indexOf('/') >= 0 ? f.substring(f.lastIndexOf('/') + 1) : f;
+        elements.push({ data: { id: 'file:' + f, label: fname, kind: 'file-group', parent: 'dir:' + dir }, classes: 'compound' });
       });
       data.nodes.forEach(function(n) {
         elements.push({ data: {
@@ -103,10 +118,11 @@
       });
     }
     var maxWeight = 1;
-    data.edges.forEach(function(e) {
+    var edges = data.edges || [];
+    edges.forEach(function(e) {
       if (e.weight > maxWeight) maxWeight = e.weight;
     });
-    data.edges.forEach(function(e) {
+    edges.forEach(function(e) {
       if (nodeSet.has(e.source) && nodeSet.has(e.target))
         elements.push({ data: { source: e.source, target: e.target, type: e.type, weight: e.weight || 1 } });
     });
@@ -181,7 +197,9 @@
         { selector: 'node.search-match', style: { 'border-color': '#f0e68c', 'border-width': 3, 'z-index': 100 }},
         { selector: 'node.filtered-out', style: { 'display': 'none' }},
       ],
-      layout: { name: 'cose-bilkent', animate: false, nodeDimensionsIncludeLabels: true, idealEdgeLength: 120, nodeRepulsion: 8000 },
+      layout: isFileView
+        ? { name: 'cose-bilkent', animate: false, nodeDimensionsIncludeLabels: true, idealEdgeLength: 120, nodeRepulsion: 8000 }
+        : { name: 'dagre', animate: false, nodeDimensionsIncludeLabels: true, rankDir: 'TB', spacingFactor: 1.2 },
       wheelSensitivity: 0.3,
     });
 

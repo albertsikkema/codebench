@@ -294,7 +294,7 @@ func buildFileGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 	// Compute health scores (normalized 0-1)
 	computeHealthScores(nodes)
 
-	var edges []GraphEdge
+	edges := make([]GraphEdge, 0)
 	edgeWeights := make(map[string]int)
 	for _, ie := range data.ImportEdges {
 		if ie.ResolvedFile == "" {
@@ -471,7 +471,7 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		nodeIDs[qid] = true
 	}
 
-	var edges []GraphEdge
+	edges := make([]GraphEdge, 0)
 	seen := make(map[string]bool)
 	for _, edge := range data.CallEdges {
 		if !nodeIDs[edge.CallerScope] {
@@ -491,7 +491,12 @@ func buildSymbolGraph(data *IndexData, rootDir string, minRefs int) GraphData {
 		}
 	}
 
-	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Refs > nodes[j].Refs })
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].File != nodes[j].File {
+			return nodes[i].File < nodes[j].File
+		}
+		return nodes[i].ID < nodes[j].ID
+	})
 	return GraphData{Nodes: nodes, Edges: edges, View: "symbol"}
 }
 
